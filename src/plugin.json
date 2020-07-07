@@ -1,0 +1,37 @@
+{
+  "type": "datasource",
+  "name": "Signal Generator",
+  "id": "waveform-datasource",
+  
+  "backend": true,
+  "executable": "gpx_wave",
+  "metrics": true,
+
+  "info": {
+    "description": "Show drone build data",
+    "author": {
+      "name": "Grafana Labs",
+      "url": "https://grafana.com"
+    },
+    "keywords": [
+      "signal geneator", "awg"
+    ],
+    "logos": {
+      "small": "img/signal.svg",
+      "large": "img/signal.svg"
+    },
+    "links": [
+      {
+        "name": "Website",
+        "url": "https://github.com/grafana/google-sheets-datasource"
+      }
+    ],
+    "screenshots": [],
+    "version": "%VERSION%",
+    "updated": "%TODAY%"
+  },
+  "dependencies": {
+    "grafanaVersion": "7.1.x",
+    "plugins": []
+  }
+}

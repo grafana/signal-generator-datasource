@@ -1,39 +1,31 @@
-import React, { PureComponent, ChangeEvent } from "react";
-import { QueryEditorProps, SelectableValue, KeyValue } from "@grafana/data";
-import { Select, InlineFormLabel } from "@grafana/ui";
-import { DataSource } from "../DataSource";
-import {
-  DroneQuery,
-  WaveformDatasourceOptions,
-  DroneQueryType
-} from "../types";
+import React, { PureComponent, ChangeEvent } from 'react';
+import { QueryEditorProps, SelectableValue, KeyValue } from '@grafana/data';
+import { Select, InlineFormLabel } from '@grafana/ui';
+import { DataSource } from '../DataSource';
+import { DroneQuery, WaveformDatasourceOptions, DroneQueryType } from '../types';
 
-type Props = QueryEditorProps<
-  DataSource,
-  DroneQuery,
-  WaveformDatasourceOptions
->;
+type Props = QueryEditorProps<DataSource, DroneQuery, WaveformDatasourceOptions>;
 
 const queryTypes = [
-  { label: "Show Repositories", value: DroneQueryType.Repos },
-  { label: "Show Builds", value: DroneQueryType.Builds },
-  { label: "Show Logs", value: DroneQueryType.Logs }
+  { label: 'Show Repositories', value: DroneQueryType.Repos },
+  { label: 'Show Builds', value: DroneQueryType.Builds },
+  { label: 'Show Logs', value: DroneQueryType.Logs },
 ] as Array<SelectableValue<DroneQueryType>>;
 
 const defaultQuery: KeyValue<Partial<DroneQuery>> = {
   [DroneQueryType.Repos]: {},
   [DroneQueryType.Builds]: {
-    namespace: "grafana",
-    name: "grafana",
-    pageSize: 10
+    namespace: 'grafana',
+    name: 'grafana',
+    pageSize: 10,
   },
   [DroneQueryType.Logs]: {
-    namespace: "grafana",
-    name: "grafana",
+    namespace: 'grafana',
+    name: 'grafana',
     build: 23,
     stage: 1,
-    step: 1
-  }
+    step: 1,
+  },
 };
 
 export class QueryEditor extends PureComponent<Props> {
@@ -41,7 +33,7 @@ export class QueryEditor extends PureComponent<Props> {
     const { query, onChange } = this.props;
     onChange({
       ...query,
-      queryType: val.value
+      queryType: val.value,
     });
     this.props.onRunQuery();
   };
@@ -49,7 +41,7 @@ export class QueryEditor extends PureComponent<Props> {
   onNamespaceChange = (event: ChangeEvent<HTMLInputElement>) => {
     this.props.onChange({
       ...this.props.query,
-      namespace: event.target.value
+      namespace: event.target.value,
     });
     this.props.onRunQuery();
   };
@@ -57,7 +49,7 @@ export class QueryEditor extends PureComponent<Props> {
   onNameChange = (event: ChangeEvent<HTMLInputElement>) => {
     this.props.onChange({
       ...this.props.query,
-      name: event.target.value
+      name: event.target.value,
     });
     this.props.onRunQuery();
   };
@@ -65,21 +57,21 @@ export class QueryEditor extends PureComponent<Props> {
   onBuildChange = (event: ChangeEvent<HTMLInputElement>) => {
     this.props.onChange({
       ...this.props.query,
-      build: +event.target.value
+      build: +event.target.value,
     });
     this.props.onRunQuery();
   };
   onStageChange = (event: ChangeEvent<HTMLInputElement>) => {
     this.props.onChange({
       ...this.props.query,
-      stage: +event.target.value
+      stage: +event.target.value,
     });
     this.props.onRunQuery();
   };
   onStepChange = (event: ChangeEvent<HTMLInputElement>) => {
     this.props.onChange({
       ...this.props.query,
-      step: +event.target.value
+      step: +event.target.value,
     });
     this.props.onRunQuery();
   };
@@ -102,9 +94,7 @@ export class QueryEditor extends PureComponent<Props> {
             </InlineFormLabel>
             <Select
               className="width-20"
-              value={queryTypes.find(
-                queryType => queryType.value === query.queryType
-              )}
+              value={queryTypes.find(queryType => queryType.value === query.queryType)}
               options={queryTypes}
               onChange={this.onQueryTypeChange}
             />
@@ -121,7 +111,7 @@ export class QueryEditor extends PureComponent<Props> {
             </InlineFormLabel>
             <input
               className="gf-form-input width-14"
-              value={query.namespace || ""}
+              value={query.namespace || ''}
               placeholder={standard.namespace}
               onChange={this.onNamespaceChange}
               onBlur={onRunQuery}
@@ -139,7 +129,7 @@ export class QueryEditor extends PureComponent<Props> {
             </InlineFormLabel>
             <input
               className="gf-form-input width-14"
-              value={query.name || ""}
+              value={query.name || ''}
               placeholder={standard.name}
               onChange={this.onNameChange}
               onBlur={onRunQuery}
@@ -158,8 +148,8 @@ export class QueryEditor extends PureComponent<Props> {
             <input
               type="number"
               className="gf-form-input width-14"
-              value={query.build || ""}
-              placeholder={standard.build + ""}
+              value={query.build || ''}
+              placeholder={standard.build + ''}
               onChange={this.onBuildChange}
               onBlur={onRunQuery}
             ></input>
@@ -177,8 +167,8 @@ export class QueryEditor extends PureComponent<Props> {
             <input
               type="number"
               className="gf-form-input width-14"
-              value={query.stage || ""}
-              placeholder={standard.stage + ""}
+              value={query.stage || ''}
+              placeholder={standard.stage + ''}
               onChange={this.onStageChange}
               onBlur={onRunQuery}
             ></input>
@@ -196,8 +186,8 @@ export class QueryEditor extends PureComponent<Props> {
             <input
               type="number"
               className="gf-form-input width-14"
-              value={query.step || ""}
-              placeholder={standard.step + ""}
+              value={query.step || ''}
+              placeholder={standard.step + ''}
               onChange={this.onStepChange}
               onBlur={onRunQuery}
             ></input>

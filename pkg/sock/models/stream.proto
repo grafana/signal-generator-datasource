@@ -1,0 +1,62 @@
+syntax = "proto3";
+package pluginv2;
+
+option go_package = ".;pluginv2";
+
+//-----------------------------------------------
+// Topics
+//-----------------------------------------------
+
+message StreamMessage {
+  enum Action {
+    NOOP = 0; // A message that should not go anywhere
+    ERROR = 1; // An error response.  When used with `subscribe`, the client will not be subscribed
+    DATA_FRAME = 2;
+    APPEND_ROWS = 3;
+    TEXT = 4;
+    JSON = 5;
+    SHUTDOWN_TOPIC = 6;
+  }
+
+  int64 pluginId = 1; 
+  string topic = 2;
+  string session = 3; // optional limit the message to a single client
+  
+  bytes payload = 4;
+  Action action = 5;
+}
+
+message StreamRequest {
+  PluginContext pluginContext = 1;
+  string topic = 2;
+
+  enum Action {
+    PLUGIN_LOADED = 0; // Called at startup
+    PLUGIN_CHANGED = 0; // Called when editor changes it
+    PLUGIN_REMOVED = 0;  // Called after delte
+
+    TOPIC_LIST = 3;
+    TOPIC_SUBSCRIBE = 3;
+    TOPIC_UNSUBSCRIBE = 3; // callback when disconnected
+    TOPIC_SHUTDOWN = 3;
+    TOPIC_CONFIG = 3;
+  }
+
+  // Environment info
+  bytes jsonBody = 4;
+
+  // Info about the user who calls the plugin.
+  User user = 3;
+
+  // sessionid for the connected user
+  string sessionId = 5;
+}
+
+service StreamingService {
+  // Single stream that is called for every instance.  
+  rpc InitSteam(google.protobuf.Empty) returns (stream TopicMessage);
+
+  // Request/response
+  rpc Process(TopicRequest) returns (TopicMessage);
+}
+

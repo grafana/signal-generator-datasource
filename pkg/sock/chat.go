@@ -4,11 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 
 	"math/rand"
 
@@ -47,9 +49,11 @@ type chatServer struct {
 func newChatServer() *chatServer {
 	cs := &chatServer{
 		subscriberMessageBuffer: 16,
-		logf:                    log.Printf,
-		subscribers:             make(map[*subscriber]struct{}),
-		publishLimiter:          rate.NewLimiter(rate.Every(time.Millisecond*100), 8),
+		logf: func(f string, v ...interface{}) {
+			log.DefaultLogger.Info("LOGF", "msg", fmt.Sprintf(f, v))
+		},
+		subscribers:    make(map[*subscriber]struct{}),
+		publishLimiter: rate.NewLimiter(rate.Every(time.Millisecond*100), 8),
 	}
 	cs.serveMux.Handle("/", http.FileServer(http.Dir("/home/ryan/workspace/grafana/plugins/waveform-datasource/pkg/sock")))
 	cs.serveMux.HandleFunc("/subscribe", cs.subscribeHandler)
@@ -74,8 +78,11 @@ func (cs *chatServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // subscribeHandler accepts the WebSocket connection and then subscribes
 // it to all future messages.
 func (cs *chatServer) subscribeHandler(w http.ResponseWriter, r *http.Request) {
-	c, err := websocket.Accept(w, r, nil)
+	c, err := websocket.Accept(w, r, &websocket.AcceptOptions{
+		InsecureSkipVerify: true, // alow cross orgin
+	})
 	if err != nil {
+		log.DefaultLogger.Info("subscribe", "ACCEPT", err.Error())
 		cs.logf("%v", err)
 		return
 	}
@@ -83,6 +90,7 @@ func (cs *chatServer) subscribeHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = cs.subscribe(r.Context(), c)
 	if errors.Is(err, context.Canceled) {
+		log.DefaultLogger.Info("subscribe", "CANCEL", err.Error)
 		return
 	}
 	if websocket.CloseStatus(err) == websocket.StatusNormalClosure ||
@@ -90,6 +98,7 @@ func (cs *chatServer) subscribeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
+		log.DefaultLogger.Info("subscribe", "ERROR", err.Error)
 		cs.logf("%v", err)
 		return
 	}
@@ -189,6 +198,41 @@ func writeTimeout(ctx context.Context, timeout time.Duration, c *websocket.Conn,
 }
 
 ///////
+
+// write to a stream....
+func (cs *chatServer) streamSignalToSocket() {
+	speed := 1000 / 20 // 20 hz
+	spread := 50.0
+
+	walker := rand.Float64() * 100
+	ticker := time.NewTicker(time.Duration(speed) * time.Millisecond)
+
+	line := models.InfluxLine{
+		Name:   "simple",
+		Fields: make(map[string]interface{}),
+		Tags:   make(map[string]string),
+	}
+
+	for t := range ticker.C {
+		// if rand.Float64() > 0.1 {
+		// 	continue
+		// }
+
+		delta := rand.Float64() - 0.5
+		walker += delta
+
+		ms := t.UnixNano() / (int64(time.Millisecond) / int64(time.Nanosecond))
+
+		line.Timestamp = ms
+		line.Fields["value"] = walker
+		line.Fields["min"] = walker - ((rand.Float64() * spread) + 0.01)
+		line.Fields["max"] = walker + ((rand.Float64() * spread) + 0.01)
+
+		b, _ := json.Marshal(line)
+
+		cs.publish(b)
+	}
+}
 
 // write to a stream....
 func (cs *chatServer) streamSignal(w http.ResponseWriter, r *http.Request) {

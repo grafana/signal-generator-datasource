@@ -1,14 +1,10 @@
 import React, { PureComponent } from 'react';
 import { LegacyForms, InlineFormLabel } from '@grafana/ui';
-const { Input, SecretFormField } = LegacyForms;
-import {
-  DataSourcePluginOptionsEditorProps,
-  onUpdateDatasourceSecureJsonDataOption,
-  updateDatasourcePluginResetOption,
-} from '@grafana/data';
-import { WaveformDatasourceOptions, DroneSecureJsonData } from '../types';
+const { Input } = LegacyForms;
+import { DataSourcePluginOptionsEditorProps } from '@grafana/data';
+import { AWGDatasourceOptions, AWGSecureJsonData } from '../types';
 
-export type Props = DataSourcePluginOptionsEditorProps<WaveformDatasourceOptions, DroneSecureJsonData>;
+export type Props = DataSourcePluginOptionsEditorProps<AWGDatasourceOptions, AWGSecureJsonData>;
 
 export class ConfigEditor extends PureComponent<Props> {
   constructor(props: Props) {
@@ -26,8 +22,9 @@ export class ConfigEditor extends PureComponent<Props> {
 
   render() {
     const { options } = this.props;
-    const { secureJsonFields } = options;
-    const secureJsonData = (options.secureJsonData || {}) as DroneSecureJsonData;
+    if (true) {
+      return <div />;
+    }
 
     return (
       <>
@@ -48,20 +45,6 @@ export class ConfigEditor extends PureComponent<Props> {
                 onChange={this.onUpdateURL}
               />
             </div>
-          </div>
-        </div>
-        <div className="gf-form-inline">
-          <div className="gf-form">
-            <SecretFormField
-              isConfigured={(secureJsonFields && secureJsonFields.token) as boolean}
-              value={secureJsonData.token || ''}
-              label="Token"
-              placeholder="service accout token"
-              labelWidth={10}
-              inputWidth={20}
-              onReset={() => updateDatasourcePluginResetOption(this.props, 'token')}
-              onChange={onUpdateDatasourceSecureJsonDataOption(this.props, 'token')}
-            />
           </div>
         </div>
       </>

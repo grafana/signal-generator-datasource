@@ -39,6 +39,9 @@ func run() error {
 		errc <- s.Serve(l)
 	}()
 
+	// Send signal stream to everyone
+	go cs.streamSignalToSocket()
+
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, os.Interrupt)
 	select {

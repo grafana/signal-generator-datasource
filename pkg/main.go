@@ -12,7 +12,7 @@ import (
 func main() {
 	// Background thread
 	log.DefaultLogger.Info("starting http server")
-	go sock.RunChatServer()
+	go sock.RunChatServer("localhost:3003")
 
 	log.DefaultLogger.Info("starting grpc server")
 	err := datasource.Serve(awg.CreateDatasourcePlugin())

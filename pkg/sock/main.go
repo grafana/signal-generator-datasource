@@ -16,9 +16,9 @@ import (
 )
 
 // RunChatServer runs a chat server
-func RunChatServer() {
+func RunChatServer(address string) {
 	log.DefaultLogger.Debug("word")
-	err := run()
+	err := run(address)
 	if err != nil {
 		log.DefaultLogger.Error(err.Error())
 	}
@@ -26,7 +26,7 @@ func RunChatServer() {
 
 // run initializes the chatServer and then
 // starts a http.Server for the passed in address.
-func run() error {
+func run(address string) error {
 	log.DefaultLogger.Debug("running chat server")
 	datac := make(chan *models.InfluxLine, 100)
 
@@ -51,13 +51,13 @@ func run() error {
 	replay.SetParser(parser)
 	err = replay.Start(datac)
 
-	l, err := net.Listen("tcp", "localhost:3003")
+	l, err := net.Listen("tcp", address)
 	if err != nil {
 		return err
 	}
 	log.DefaultLogger.Info("listening on", "address", l.Addr())
 
-	cs := newChatServer()
+	cs := NewChatServer()
 	s := &http.Server{
 		Handler:     cs,
 		ReadTimeout: time.Second * 10,

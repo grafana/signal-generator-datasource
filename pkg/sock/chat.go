@@ -14,7 +14,8 @@ import (
 
 	"math/rand"
 
-	"github.com/grafana/waveform-datasource/pkg/sock/models"
+	"github.com/grafana/waveform-datasource/pkg/models"
+	"github.com/grafana/waveform-datasource/pkg/serializers"
 	"golang.org/x/time/rate"
 
 	"nhooyr.io/websocket"
@@ -55,7 +56,7 @@ func newChatServer() *chatServer {
 		subscribers:    make(map[*subscriber]struct{}),
 		publishLimiter: rate.NewLimiter(rate.Every(time.Millisecond*100), 8),
 	}
-	cs.serveMux.Handle("/", http.FileServer(http.Dir("/home/ryan/workspace/grafana/plugins/waveform-datasource/pkg/sock")))
+	cs.serveMux.Handle("/", http.FileServer(http.Dir("/Users/stephanie/src/plugins/waveform-datasource/pkg/sock")))
 	cs.serveMux.HandleFunc("/subscribe", cs.subscribeHandler)
 	cs.serveMux.HandleFunc("/publish", cs.publishHandler)
 	cs.serveMux.HandleFunc("/stream", cs.streamSignal)
@@ -201,7 +202,7 @@ func writeTimeout(ctx context.Context, timeout time.Duration, c *websocket.Conn,
 
 // write to a stream....
 func (cs *chatServer) streamSignalToSocket() {
-	speed := 1000 / 20 // 20 hz
+	speed := 1000 // / 20 // 20 hz
 	spread := 50.0
 
 	walker := rand.Float64() * 100
@@ -221,15 +222,23 @@ func (cs *chatServer) streamSignalToSocket() {
 		delta := rand.Float64() - 0.5
 		walker += delta
 
-		ms := t.UnixNano() / (int64(time.Millisecond) / int64(time.Nanosecond))
+		//ms := t.UnixNano() / (int64(time.Millisecond) / int64(time.Nanosecond))
 
-		line.Timestamp = ms
+		line.Timestamp = t
 		line.Fields["value"] = walker
 		line.Fields["min"] = walker - ((rand.Float64() * spread) + 0.01)
 		line.Fields["max"] = walker + ((rand.Float64() * spread) + 0.01)
 
 		b, _ := json.Marshal(line)
 
+		cs.publish(b)
+	}
+}
+
+func (cs *chatServer) streamMetricsToSocket(datac chan *models.InfluxLine, s serializers.Serializer) {
+	for {
+		metric := <-datac
+		b, _ := s.Serialize(metric)
 		cs.publish(b)
 	}
 }
@@ -269,9 +278,7 @@ func (cs *chatServer) streamSignal(w http.ResponseWriter, r *http.Request) {
 		delta := rand.Float64() - 0.5
 		walker += delta
 
-		ms := t.UnixNano() / (int64(time.Millisecond) / int64(time.Nanosecond))
-
-		line.Timestamp = ms
+		line.Timestamp = t
 		line.Fields["value"] = walker
 		line.Fields["min"] = walker - ((rand.Float64() * spread) + 0.01)
 		line.Fields["max"] = walker + ((rand.Float64() * spread) + 0.01)

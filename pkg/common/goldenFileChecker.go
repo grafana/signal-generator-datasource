@@ -117,7 +117,7 @@ func writeGoldenFile(path string, dr *backend.DataResponse) error {
 			if frame.Meta != nil {
 				frame.Meta.Custom = nil
 				if frame.Meta.Stats != nil {
-					frame.Meta.Stats = make([]string, 0) // avoid timing changes
+					frame.Meta.Stats = make([]data.QueryStat, 0) // avoid timing changes
 				}
 
 				meta, _ := json.MarshalIndent(frame.Meta, "", "    ")

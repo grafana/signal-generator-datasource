@@ -14,14 +14,15 @@ import (
 
 	"math/rand"
 
-	"github.com/grafana/waveform-datasource/pkg/sock/models"
+	"github.com/grafana/waveform-datasource/pkg/models"
+	"github.com/grafana/waveform-datasource/pkg/serializers"
 	"golang.org/x/time/rate"
 
 	"nhooyr.io/websocket"
 )
 
-// chatServer enables broadcasting to a set of subscribers.
-type chatServer struct {
+// ChatServer enables broadcasting to a set of subscribers.
+type ChatServer struct {
 	// subscriberMessageBuffer controls the max number
 	// of messages that can be queued for a subscriber
 	// before it is kicked.
@@ -45,9 +46,9 @@ type chatServer struct {
 	subscribers   map[*subscriber]struct{}
 }
 
-// newChatServer constructs a chatServer with the defaults.
-func newChatServer() *chatServer {
-	cs := &chatServer{
+// newChatServer constructs a ChatServer with the defaults.
+func NewChatServer() *ChatServer {
+	cs := &ChatServer{
 		subscriberMessageBuffer: 16,
 		logf: func(f string, v ...interface{}) {
 			log.DefaultLogger.Info("LOGF", "msg", fmt.Sprintf(f, v))
@@ -55,7 +56,7 @@ func newChatServer() *chatServer {
 		subscribers:    make(map[*subscriber]struct{}),
 		publishLimiter: rate.NewLimiter(rate.Every(time.Millisecond*100), 8),
 	}
-	cs.serveMux.Handle("/", http.FileServer(http.Dir("/home/ryan/workspace/grafana/plugins/waveform-datasource/pkg/sock")))
+	cs.serveMux.Handle("/", http.FileServer(http.Dir("/Users/stephanie/src/plugins/waveform-datasource/pkg/sock")))
 	cs.serveMux.HandleFunc("/subscribe", cs.subscribeHandler)
 	cs.serveMux.HandleFunc("/publish", cs.publishHandler)
 	cs.serveMux.HandleFunc("/stream", cs.streamSignal)
@@ -71,13 +72,13 @@ type subscriber struct {
 	closeSlow func()
 }
 
-func (cs *chatServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (cs *ChatServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	cs.serveMux.ServeHTTP(w, r)
 }
 
 // subscribeHandler accepts the WebSocket connection and then subscribes
 // it to all future messages.
-func (cs *chatServer) subscribeHandler(w http.ResponseWriter, r *http.Request) {
+func (cs *ChatServer) subscribeHandler(w http.ResponseWriter, r *http.Request) {
 	c, err := websocket.Accept(w, r, &websocket.AcceptOptions{
 		InsecureSkipVerify: true, // alow cross orgin
 	})
@@ -106,7 +107,7 @@ func (cs *chatServer) subscribeHandler(w http.ResponseWriter, r *http.Request) {
 
 // publishHandler reads the request body with a limit of 8192 bytes and then publishes
 // the received message.
-func (cs *chatServer) publishHandler(w http.ResponseWriter, r *http.Request) {
+func (cs *ChatServer) publishHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
 		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 		return
@@ -133,7 +134,7 @@ func (cs *chatServer) publishHandler(w http.ResponseWriter, r *http.Request) {
 //
 // It uses CloseRead to keep reading from the connection to process control
 // messages and cancel the context if the connection drops.
-func (cs *chatServer) subscribe(ctx context.Context, c *websocket.Conn) error {
+func (cs *ChatServer) subscribe(ctx context.Context, c *websocket.Conn) error {
 	ctx = c.CloseRead(ctx)
 
 	s := &subscriber{
@@ -161,7 +162,7 @@ func (cs *chatServer) subscribe(ctx context.Context, c *websocket.Conn) error {
 // publish publishes the msg to all subscribers.
 // It never blocks and so messages to slow subscribers
 // are dropped.
-func (cs *chatServer) publish(msg []byte) {
+func (cs *ChatServer) publish(msg []byte) {
 	cs.subscribersMu.Lock()
 	defer cs.subscribersMu.Unlock()
 
@@ -176,15 +177,19 @@ func (cs *chatServer) publish(msg []byte) {
 	}
 }
 
+func (cs *ChatServer) Publish(msg []byte) {
+	cs.publish(msg)
+}
+
 // addSubscriber registers a subscriber.
-func (cs *chatServer) addSubscriber(s *subscriber) {
+func (cs *ChatServer) addSubscriber(s *subscriber) {
 	cs.subscribersMu.Lock()
 	cs.subscribers[s] = struct{}{}
 	cs.subscribersMu.Unlock()
 }
 
 // deleteSubscriber deletes the given subscriber.
-func (cs *chatServer) deleteSubscriber(s *subscriber) {
+func (cs *ChatServer) deleteSubscriber(s *subscriber) {
 	cs.subscribersMu.Lock()
 	delete(cs.subscribers, s)
 	cs.subscribersMu.Unlock()
@@ -200,8 +205,8 @@ func writeTimeout(ctx context.Context, timeout time.Duration, c *websocket.Conn,
 ///////
 
 // write to a stream....
-func (cs *chatServer) streamSignalToSocket() {
-	speed := 1000 / 20 // 20 hz
+func (cs *ChatServer) streamSignalToSocket() {
+	speed := 1000 // / 20 // 20 hz
 	spread := 50.0
 
 	walker := rand.Float64() * 100
@@ -221,9 +226,9 @@ func (cs *chatServer) streamSignalToSocket() {
 		delta := rand.Float64() - 0.5
 		walker += delta
 
-		ms := t.UnixNano() / (int64(time.Millisecond) / int64(time.Nanosecond))
+		//ms := t.UnixNano() / (int64(time.Millisecond) / int64(time.Nanosecond))
 
-		line.Timestamp = ms
+		line.Timestamp = t
 		line.Fields["value"] = walker
 		line.Fields["min"] = walker - ((rand.Float64() * spread) + 0.01)
 		line.Fields["max"] = walker + ((rand.Float64() * spread) + 0.01)
@@ -234,8 +239,16 @@ func (cs *chatServer) streamSignalToSocket() {
 	}
 }
 
+func (cs *ChatServer) streamMetricsToSocket(datac chan *models.InfluxLine, s serializers.Serializer) {
+	for {
+		metric := <-datac
+		b, _ := s.Serialize(metric)
+		cs.publish(b)
+	}
+}
+
 // write to a stream....
-func (cs *chatServer) streamSignal(w http.ResponseWriter, r *http.Request) {
+func (cs *ChatServer) streamSignal(w http.ResponseWriter, r *http.Request) {
 	setupResponse(&w, r)
 	if (*r).Method == "OPTIONS" {
 		return
@@ -269,9 +282,7 @@ func (cs *chatServer) streamSignal(w http.ResponseWriter, r *http.Request) {
 		delta := rand.Float64() - 0.5
 		walker += delta
 
-		ms := t.UnixNano() / (int64(time.Millisecond) / int64(time.Nanosecond))
-
-		line.Timestamp = ms
+		line.Timestamp = t
 		line.Fields["value"] = walker
 		line.Fields["min"] = walker - ((rand.Float64() * spread) + 0.01)
 		line.Fields["max"] = walker + ((rand.Float64() * spread) + 0.01)

@@ -1,4 +1,4 @@
-import { DataSourceInstanceSettings, DataQueryRequest, DataQueryResponse } from '@grafana/data';
+import { DataSourceInstanceSettings, DataQueryRequest, DataQueryResponse, KeyValue } from '@grafana/data';
 import { DataSourceWithBackend } from '@grafana/runtime';
 import { Observable } from 'rxjs';
 
@@ -15,7 +15,7 @@ export class DataSource extends DataSourceWithBackend<AWGQuery, AWGDatasourceOpt
       if (target.queryType === AWGQueryType.Stream) {
         console.log('TODO... open websocket!');
 
-        return listenToSocket();
+        return listenToSocket(target);
       }
     }
     return super.query(request);

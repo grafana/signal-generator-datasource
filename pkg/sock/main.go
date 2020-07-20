@@ -17,7 +17,6 @@ import (
 
 // RunChatServer runs a chat server
 func RunChatServer(address string) {
-	log.DefaultLogger.Debug("word")
 	err := run(address)
 	if err != nil {
 		log.DefaultLogger.Error(err.Error())

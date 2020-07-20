@@ -7,6 +7,7 @@ export enum AWGQueryType {
 
 export interface AWGQuery extends DataQuery {
   queryType?: AWGQueryType;
+  queryParam?: string;
 }
 
 export interface AWGDatasourceOptions extends DataSourceJsonData {

@@ -1,6 +1,6 @@
 import React, { PureComponent } from 'react';
 import { QueryEditorProps, SelectableValue } from '@grafana/data';
-import { Select, InlineFormLabel } from '@grafana/ui';
+import { Select, InlineFormLabel, Input } from '@grafana/ui';
 import { DataSource } from '../DataSource';
 import { AWGQuery, AWGDatasourceOptions, AWGQueryType } from '../types';
 
@@ -22,6 +22,16 @@ export class QueryEditor extends PureComponent<Props> {
     onChange({
       ...query,
       queryType: val.value,
+    });
+    this.props.onRunQuery();
+  };
+
+  onQueryParamChange = (val: React.FocusEvent<HTMLInputElement>) => {
+    console.log('val', val.target.value);
+    const { query, onChange } = this.props;
+    onChange({
+      ...query,
+      queryParam: val.target.value,
     });
     this.props.onRunQuery();
   };
@@ -87,6 +97,16 @@ export class QueryEditor extends PureComponent<Props> {
               onChange={this.onQueryTypeChange}
             />
           </div>
+          <InlineFormLabel width={labelWidth} className="query-keyword">
+            Query Path
+          </InlineFormLabel>
+          <Input
+            css=""
+            value={query.queryParam}
+            width={20}
+            placeholder="?namepass=*"
+            onChange={this.onQueryParamChange}
+          />
           <div className="gf-form--grow">
             <label className="gf-form-label gf-form-label--grow"></label>
           </div>

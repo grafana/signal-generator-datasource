@@ -3,15 +3,14 @@
     "target": "ES6",
     "module": "commonjs",
     "sourceMap": true,
-    "rootDir": "src",
-    "outDir": "dist",
+    "rootDir": "pkg",
+    "outDir": "dist/backend",
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "esModuleInterop": true,
-    "rootDirs": ["."],
     "typeRoots": ["node_modules/@types", "types"]
   },
   "exclude": ["dist", "node_modules"],
   "extends": "@grafana/tsconfig",
-  "include": ["src/**/*.ts*", "src/proto/*"]
+  "include": ["pkg/**/*.ts*"]
 }

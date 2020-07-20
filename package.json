@@ -1,28 +1,44 @@
 {
-  "name": "waveform-datasource",
-  "version": "0.0.1-dev",
-  "description": "Signal generator",
-  "scripts": {
-    "build": "rm -rf dist && grafana-toolkit plugin:build && mage",
-    "test": "grafana-toolkit plugin:test",
-    "dev": "grafana-toolkit plugin:dev",
-    "watch": "grafana-toolkit plugin:dev --watch"
+  "name": "@grafana/tsbackend",
+  "version": "1.0.0",
+  "description": "Wrapper for writing a backend plugin in nodejs",
+  "main": "dist/index.js",
+  "files": [
+    "dist/**/*"
+  ],
+  "pkg": {
+    "assets": [
+      "/**/backend.proto"
+    ]
   },
-  "repository": "github:grafana/waveform-datasource",
-  "author": "Grafana Labs <team@grafana.com> (https://grafana.com)",
+  "bin": {
+    "grafana-tsbackend": "./bin/grafana-tsbackend"
+  },
+  "scripts": {
+    "build": "tsc --declaration",
+    "test": "",
+    "dev": "tsc --declaration",
+    "watch": ""
+  },
+  "author": "Stephanie Closson",
   "license": "Apache-2.0",
   "devDependencies": {
     "@grafana/data": "next",
-    "@grafana/runtime": "next",
     "@grafana/toolkit": "next",
+    "@grafana/runtime": "next",
     "@grafana/ui": "next",
-    "@types/lodash": "latest"
+    "@types/lodash": "latest",
+    "grpc": "^1.24.3",
+    "google-protobuf": "^3.12.2",
+    "grpc-tools": "^1.9.0",
+    "typescript": "3.7.5",
+    "protoc-gen-grpc": "1.4.0",
+    "@grafana/tsconfig": "^1.0.0-rc1",
+    "request-promise-native": "1.0.8",
+    "@types/request-promise-native": "1.0.14",
+    "tslib":" ^2.0.0"
   },
-  "volta": {
-    "node": "12.16.3"
-  },
-  "dependencies": {
-    "glob": "^7.1.6",
-    "minimatch": "^3.0.4"
+  "engines": {
+    "node": ">=12 <13"
   }
 }

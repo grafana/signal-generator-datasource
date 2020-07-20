@@ -3,7 +3,6 @@ package models
 import (
 	"encoding/json"
 	"fmt"
-	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 )
@@ -40,13 +39,6 @@ type QueryModel struct {
 
 	// Not from JSON
 	TimeRange backend.TimeRange `json:"-"`
-}
-
-type InfluxLine struct {
-	Name      string                 `json:"name,omitempty"`
-	Fields    map[string]interface{} `json:"fields,omitempty"`
-	Tags      map[string]string      `json:"tags,omitempty"`
-	Timestamp time.Time              `json:"timestamp,omitempty"`
 }
 
 // GetQueryModel returns the well typed query model

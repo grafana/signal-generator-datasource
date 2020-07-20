@@ -22,13 +22,9 @@ centrifuge.on('publish', function(ctx) {
   console.log('Publication from server-side channel', ctx);
 });
 
-centrifuge.connect();
-
-centrifuge.subscribe('simple', (message: PublicationContext) => {
-  console.log('MESSAGE', message);
-});
-
-export function checkConnection() {
-  console.log('BEFORE');
-  console.log('IS Connected', centrifuge.isConnected());
+export function doConnect(onMsg: (msgs: any) => void) {
+  centrifuge.connect();
+  return centrifuge.subscribe('simple', (message: PublicationContext) => {
+    onMsg(message.data);
+  });
 }

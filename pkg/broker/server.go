@@ -12,8 +12,6 @@ import (
 // Without provided Credentials client connection won't be accepted.
 func auth(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		setupResponse(&w, r)
-
 		ctx := r.Context()
 		// Put authentication Credentials into request Context. Since we don't
 		// have any session backend here we simply set user ID as empty string.
@@ -132,10 +130,4 @@ func (b *GrafanaBroker) ListenAndServe(addr string) {
 	if err := http.ListenAndServe(addr, nil); err != nil {
 		log.Fatal(err)
 	}
-}
-
-func setupResponse(w *http.ResponseWriter, req *http.Request) {
-	(*w).Header().Set("Access-Control-Allow-Origin", "*")
-	(*w).Header().Set("Access-Control-Allow-Methods", "GET")
-	(*w).Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
 }

@@ -83,7 +83,7 @@ func (cs *ChatServer) subscribeHandler(w http.ResponseWriter, r *http.Request) {
 		InsecureSkipVerify: true, // alow cross orgin
 	})
 	if err != nil {
-		log.DefaultLogger.Info("subscribe", "ACCEPT", err.Error())
+		//log.DefaultLogger.Info("subscribe", "ACCEPT", err.Error())
 		cs.logf("%v", err)
 		return
 	}
@@ -91,7 +91,7 @@ func (cs *ChatServer) subscribeHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = cs.subscribe(r.Context(), c)
 	if errors.Is(err, context.Canceled) {
-		log.DefaultLogger.Info("subscribe", "CANCEL", err.Error)
+		//log.DefaultLogger.Info("subscribe", "CANCEL", err.Error)
 		return
 	}
 	if websocket.CloseStatus(err) == websocket.StatusNormalClosure ||
@@ -99,7 +99,7 @@ func (cs *ChatServer) subscribeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
-		log.DefaultLogger.Info("subscribe", "ERROR", err.Error)
+		//log.DefaultLogger.Info("subscribe", "ERROR", err.Error)
 		cs.logf("%v", err)
 		return
 	}

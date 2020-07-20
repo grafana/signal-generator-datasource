@@ -24,6 +24,8 @@
   },
   "dependencies": {
     "centrifuge": "^2.6.4",
-    "sockjs-client": "^1.4.0"
+    "sockjs-client": "^1.4.0",
+    "glob": "^7.1.6",
+    "minimatch": "^3.0.4"
   }
 }

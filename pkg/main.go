@@ -32,7 +32,7 @@ func main() {
 
 // write to a stream....
 func streamSignal(broker *broker.GrafanaBroker, channel string) {
-	speed := 1000 / 1 // 20 hz
+	speed := 1000 / 20 // 20 hz
 	spread := 50.0
 
 	walker := rand.Float64() * 100
@@ -44,7 +44,10 @@ func streamSignal(broker *broker.GrafanaBroker, channel string) {
 		Tags:   make(map[string]string),
 	}
 
-	s, _ := serializers.NewSerializer(&serializers.Config{})
+	s, _ := serializers.NewSerializer(&serializers.Config{
+		DataFormat:     "json",
+		TimestampUnits: time.Duration(1) * time.Millisecond,
+	})
 
 	for t := range ticker.C {
 		delta := rand.Float64() - 0.5
@@ -55,7 +58,8 @@ func streamSignal(broker *broker.GrafanaBroker, channel string) {
 		line.Fields["min"] = walker - ((rand.Float64() * spread) + 0.01)
 		line.Fields["max"] = walker + ((rand.Float64() * spread) + 0.01)
 
-		b, _ := s.Serialize(&line) //json.Marshal(line)
+		b, _ := s.SerializeBatch([]*models.InfluxLine{&line}) //json.Marshal(line)
+
 		broker.Publish(channel, b)
 	}
 }

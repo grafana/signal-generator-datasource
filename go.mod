@@ -3,6 +3,7 @@ module github.com/grafana/waveform-datasource
 go 1.14
 
 require (
+	github.com/centrifugal/centrifuge v0.10.0 
 	github.com/gobwas/glob v0.2.3
 	github.com/google/go-cmp v0.5.0
 	github.com/grafana/grafana-plugin-sdk-go v0.75.0

@@ -9,7 +9,6 @@ const centrifuge = new Centrifuge('http://localhost:3007/broker/sockjs', {
 centrifuge.setToken('ABCD');
 
 centrifuge.on('connect', function(context) {
-  // now client connected to Centrifugo and authorized
   console.log('CONNECT', context);
 });
 
@@ -24,7 +23,7 @@ centrifuge.on('publish', function(ctx) {
 
 export function doConnect(onMsg: (msgs: any) => void) {
   centrifuge.connect();
-  return centrifuge.subscribe('simple', (message: PublicationContext) => {
+  return centrifuge.subscribe('example', (message: PublicationContext) => {
     onMsg(message.data);
   });
 }

@@ -18,7 +18,7 @@ func main() {
 	log.DefaultLogger.Info("starting http server")
 	b := &broker.GrafanaBroker{}
 	go b.ListenAndServe(":3007")
-	go streamSignal(b, "simple")
+	go streamSignal(b, "example")
 
 	log.DefaultLogger.Info("starting grpc server")
 	err := datasource.Serve(awg.CreateDatasourcePlugin())

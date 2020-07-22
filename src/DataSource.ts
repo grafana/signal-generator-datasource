@@ -1,4 +1,4 @@
-import { DataSourceInstanceSettings, DataQueryRequest, DataQueryResponse, KeyValue } from '@grafana/data';
+import { DataSourceInstanceSettings, DataQueryRequest, DataQueryResponse } from '@grafana/data';
 import { DataSourceWithBackend } from '@grafana/runtime';
 import { Observable } from 'rxjs';
 

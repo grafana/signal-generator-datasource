@@ -1,9 +1,9 @@
 import { Observable } from 'rxjs';
-import { webSocket, WebSocketSubject } from 'rxjs/webSocket';
 import { AWGQuery } from './types';
-import { DataQueryResponse, CircularDataFrame, KeyValue, FieldType, LoadingState, DataQueryRequest } from '@grafana/data';
+import { DataQueryResponse, CircularDataFrame, KeyValue, FieldType, LoadingState } from '@grafana/data';
 import * as minimatch from 'minimatch';
 import { ObservableSubject } from './subject';
+import { doConnect } from 'broker/streams';
 
 interface InfluxMessage {
   name: string;
@@ -16,19 +16,14 @@ interface InfluxMessageCollection {
   metrics: InfluxMessage[];
 }
 
+let socket: any = undefined;
 let subjects: ObservableSubject[] = [];
-let socket: WebSocketSubject<InfluxMessageCollection> | undefined;
 let lastMessage = 0;
 
 export function listenToSocket(request: AWGQuery): Observable<DataQueryResponse> {
   if (!socket) {
     console.log('Connecting to websocket...');
-    socket = webSocket('ws://localhost:3009/subscribe');
-    socket.subscribe(
-      processMsg, // Called whenever there is a message from the server.
-      err => console.log('ERROR', err), // Called if at any point WebSocket API signals some kind of error.
-      () => console.log('complete') // Called when connection is closed (for whatever reason).
-    );
+    socket = doConnect(processMsg);
   }
 
   const subject = new ObservableSubject(request);
@@ -40,19 +35,19 @@ function nameGlobMatches(msg: InfluxMessage, filters: KeyValue<string>): boolean
   for (let key of Object.keys(filters)) {
     let value = filters[key];
     if (key === 'namepass' && minimatch.match([msg.name], value).length === 0) {
-      return false
+      return false;
     }
 
     if (key === 'namedrop' && minimatch.match([msg.name], value).length !== 0) {
-      return false
+      return false;
     }
   }
-  return true
+  return true;
 }
 
 function filterFields(fields: Record<string, number>, filters: KeyValue<string>): Record<string, number> {
-  const pass = filters["fieldpass"];
-  const drop = filters["fielddrop"];
+  const pass = filters['fieldpass'];
+  const drop = filters['fielddrop'];
 
   if (!pass && !drop) {
     return fields;
@@ -66,7 +61,7 @@ function filterFields(fields: Record<string, number>, filters: KeyValue<string>)
       f[key] = fields[key];
     }
     return f;
-  }, {} as Record<string, number>)
+  }, {} as Record<string, number>);
 }
 
 function filterTags(tags: Record<string, string>, filters: KeyValue<string>): Record<string, string> {
@@ -77,40 +72,41 @@ function processMsg(msgs: InfluxMessageCollection) {
   subjects.forEach(s => {
     const subject = s.subject;
     const data = s.data;
-    const maxdata: number = msgs.metrics.length - (parseInt(s.filters['maxdata'], 10) || msgs.metrics.length);
-    msgs.metrics.filter(msg => nameGlobMatches(msg, s.filters)).forEach((msg, i) => {
-      const name = msg.name as string;
-      let df = data[name];
-      if (!df) {
-        df = new CircularDataFrame({
-          append: 'tail',
-          capacity: 500, //this.query.buffer,
-        });
-        df.name = name;
-        df.addField({ name: 'timestamp', type: FieldType.time }, 0);
-        data[name] = df;
-      }
-  
-      if (i > maxdata) {
+    //    const maxdata: number = msgs.metrics.length - (parseInt(s.filters['maxdata'], 10) || msgs.metrics.length);
+    msgs.metrics
+      .filter(msg => nameGlobMatches(msg, s.filters))
+      .forEach((msg, i) => {
+        const name = msg.name as string;
+        let df = data[name];
+        if (!df) {
+          df = new CircularDataFrame({
+            append: 'tail',
+            capacity: 500, //this.query.buffer,
+          });
+          df.name = name;
+          df.addField({ name: 'timestamp', type: FieldType.time }, 0);
+          data[name] = df;
+        }
+
+        // if (i > maxdata) {
         const row = {
           timestamp: msg.timestamp, // millis, not seconds * 1000,
           ...filterFields(msg.fields, s.filters),
           ...filterTags(msg.tags, s.filters),
         };
-    
+
         df.add(row, true);
-      }
-      
-  
-      const elapsed = Date.now() - lastMessage;
-      if (elapsed > 0) {
-        subject.next({
-          data: Object.values(data),
-          key: 'ws',
-          state: LoadingState.Done,
-        });
-        lastMessage = Date.now();
-      }
-    });
+        // }
+
+        const elapsed = Date.now() - lastMessage;
+        if (elapsed > 0) {
+          subject.next({
+            data: Object.values(data),
+            key: 'ws',
+            state: LoadingState.Done,
+          });
+          lastMessage = Date.now();
+        }
+      });
   });
 }

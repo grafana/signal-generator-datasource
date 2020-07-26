@@ -22,7 +22,7 @@ func main() {
 		log.DefaultLogger.Error(err.Error())
 		os.Exit(1)
 	}
-	streamSignal(b)
+	go streamSignal(b)
 
 	log.DefaultLogger.Info("starting grpc server")
 	err = datasource.Serve(awg.CreateDatasourcePlugin())

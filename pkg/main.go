@@ -16,12 +16,16 @@ import (
 func main() {
 	// Background thread
 	log.DefaultLogger.Info("starting http server")
-	b := &broker.GrafanaBroker{}
-	go b.ListenAndServe(":3007")
-	go streamSignal(b, "example")
+
+	b, err := broker.InitGrafanaLiveChannel("ws://localhost:3000/live/ws?format=protobuf", "sinal-over-ws")
+	if err != nil {
+		log.DefaultLogger.Error(err.Error())
+		os.Exit(1)
+	}
+	streamSignal(b)
 
 	log.DefaultLogger.Info("starting grpc server")
-	err := datasource.Serve(awg.CreateDatasourcePlugin())
+	err = datasource.Serve(awg.CreateDatasourcePlugin())
 
 	// Log any error if we could start the plugin.
 	if err != nil {
@@ -31,8 +35,8 @@ func main() {
 }
 
 // write to a stream....
-func streamSignal(broker *broker.GrafanaBroker, channel string) {
-	speed := 1000 / 20 // 20 hz
+func streamSignal(broker *broker.GrafanaLiveChannel) {
+	speed := 1000 / 1 // 20 hz
 	spread := 50.0
 
 	walker := rand.Float64() * 100
@@ -60,6 +64,6 @@ func streamSignal(broker *broker.GrafanaBroker, channel string) {
 
 		b, _ := s.SerializeBatch([]*models.InfluxLine{&line}) //json.Marshal(line)
 
-		broker.Publish(channel, b)
+		broker.Publish(b)
 	}
 }

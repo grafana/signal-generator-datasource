@@ -50,6 +50,8 @@ func GetSignalQuery(dq *backend.DataQuery) (*SignalQuery, error) {
 				}
 				wave.PeriodSec = r.Seconds()
 			}
+
+			backend.Logger.Info("PARSE", "wave", wave.Period, "ppp", wave.PeriodSec)
 		}
 	}
 

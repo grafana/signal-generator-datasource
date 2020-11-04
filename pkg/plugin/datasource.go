@@ -92,7 +92,6 @@ func (ds *Datasource) doEasing(ctx context.Context, query *models.SignalQuery) (
 		dr.Error = err
 		return
 	}
-	backend.Logger.Info("MATCH", "fff", g, "pppp", query.Ease, "match", g.Match("QuadInOut"), "match2", g.Match("zzzzz"))
 
 	time, percent := makeTimeAndPercent(query)
 	frame := data.NewFrame("", time)
@@ -129,7 +128,10 @@ func (ds *Datasource) doAWG(ctx context.Context, query *models.SignalQuery) (dr 
 			Amplitude: 1,
 			Type:      "Sin",
 		}
+		backend.Logger.Info("adding default wave", "wave", query.Wave)
 	}
+	backend.Logger.Info("AWG", "wave", query.Wave)
+
 	wave := make([]waves.WaveformFunc, len(query.Wave))
 	for i, w := range query.Wave {
 		f, ok := waves.WaveformFunctions[w.Type]
@@ -138,6 +140,8 @@ func (ds *Datasource) doAWG(ctx context.Context, query *models.SignalQuery) (dr 
 			return
 		}
 		wave[i] = f
+
+		backend.Logger.Info("RUN", "wave", w.PeriodSec, "www", w.Amplitude)
 	}
 
 	timef, val := makeTimeAndPercent(query)

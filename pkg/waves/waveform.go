@@ -22,7 +22,8 @@ type WaveformFunc func(t time.Time, args *WaveformArgs) float64
 // Registry of known scaling functions
 var WaveformFunctions = map[string]WaveformFunc{
 	"Sin":      sinFunc,
-	"Pulse":    pluseFunc,
+	"Square":   squareFunc,
+	"Triangle": triangleFunc,
 	"Sawtooth": sawtoothFunc,
 	"Sinc":     sincFunc,
 	"Noise":    noiseFunc,
@@ -48,12 +49,21 @@ func noiseFunc(t time.Time, args *WaveformArgs) float64 {
 	return r.Float64() * args.Amplitude
 }
 
-func pluseFunc(t time.Time, args *WaveformArgs) float64 {
+func squareFunc(t time.Time, args *WaveformArgs) float64 {
 	p := getPeriodPercent(t, args)
 	if p > args.DutyCycle {
 		return args.Amplitude
 	}
 	return 0
+}
+
+func triangleFunc(t time.Time, args *WaveformArgs) float64 {
+	aprime := &WaveformArgs{
+		Points:    []float64{0, 1, 0, -1.0},
+		Amplitude: args.Amplitude,
+		Ease:      "Linear",
+	}
+	return csvFunc(t, aprime)
 }
 
 func sincFunc(t time.Time, args *WaveformArgs) float64 {

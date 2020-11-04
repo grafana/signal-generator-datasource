@@ -26,6 +26,7 @@ export interface WaveformArgs {
 
 export interface SignalQuery extends DataQuery {
   queryType?: QueryType;
+  wave?: WaveformArgs[];
   ease?: string; // ease function matcher
 }
 

@@ -41,9 +41,6 @@ var EaseFunctions = map[string]EaseFunc{
 	"InElastic":    easeInElastic,
 	"OutElastic":   easeOutElastic,
 	"InOutElastic": easeInOutElastic,
-	"InBounce":     easeInBounce,
-	"InOutBounce":  easeInOutBounce,
-	"OutBounce":    easeOutBounce,
 }
 
 // EaseLinear simple linear easing
@@ -211,37 +208,4 @@ func easeInOutElastic(x float64) float64 {
 		return -(math.Pow(2, 20*x-10) * math.Sin((20*x-11.125)*c5)) / 2
 	}
 	return (math.Pow(2, -20*x+10)*math.Sin((20*x-11.125)*c5))/2 + 1
-}
-
-func easeInBounce(x float64) float64 {
-	return 1 - easeOutBounce(1-x)
-}
-
-func easeInOutBounce(x float64) float64 {
-	if x < 0.5 {
-		return (1 - easeOutBounce(1-2*x)) / 2
-	}
-
-	return (1 + easeOutBounce(2*x-1)) / 2
-}
-
-// The core bounce function
-func easeOutBounce(x float64) float64 {
-	const n1 = 7.5625
-	const d1 = 2.75
-
-	if x < 1/d1 {
-		return n1 * x * x
-	}
-	if x < 2/d1 {
-		x = x - 1.5
-		return n1*(x/d1)*x + 0.75
-	}
-	if x < 2.5/d1 {
-		x = x - 2.25
-		return n1*(x/d1)*x + 0.9375
-	}
-
-	x = x - 2.625
-	return n1*(x/d1)*x + 0.984375
 }

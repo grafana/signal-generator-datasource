@@ -6,9 +6,10 @@
   "backend": true,
   "executable": "gpx_signal",
   "metrics": true,
+  "category": "iot",
 
   "info": {
-    "description": "Signal generator",
+    "description": "Arbitrary waveform generator",
     "author": {
       "name": "Grafana Labs",
       "url": "https://grafana.com"

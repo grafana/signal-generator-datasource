@@ -28,7 +28,7 @@ export interface SignalQuery extends DataQuery {
 }
 
 export interface SignalDatasourceOptions extends DataSourceJsonData {
-  // URL is used as host
+  // nothing for now
 }
 
 export interface SignalSecureJsonData {

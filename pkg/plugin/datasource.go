@@ -3,9 +3,12 @@ package plugin
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
+	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/grafana/signal-generator-datasource/pkg/models"
+	"github.com/grafana/signal-generator-datasource/pkg/waves"
 )
 
 type Datasource struct {
@@ -42,17 +45,51 @@ func (ds *Datasource) QueryData(ctx context.Context, req *backend.QueryDataReque
 }
 
 func (ds *Datasource) doQuery(ctx context.Context, query *models.SignalQuery) backend.DataResponse {
-	// switch query.QueryType {
-	// case models.QueryTypeListTags:
-	// 	return ds.handleListTags(ctx, query)
-	// case models.QueryTypeListTagGroups:
-	// 	return ds.handleListTagGroups(ctx, query)
-	// case models.QueryTypeGetTagValue:
-	// 	return ds.handleGetTagValue(ctx, query)
-	// case models.QueryTypeGetTagConfig:
-	// 	return ds.handleGetTagConfig(ctx, query)
-	// }
+	switch query.QueryType {
+	case models.QueryTypeEasings:
+		return ds.doEasing(ctx, query)
+	}
 	return backend.DataResponse{
 		Error: fmt.Errorf("unsupported query: %s", query.QueryType),
+	}
+}
+
+func (ds *Datasource) doEasing(ctx context.Context, query *models.SignalQuery) backend.DataResponse {
+
+	total := query.TimeRange.To.Sub(query.TimeRange.From)
+	count := int(query.MaxDataPoints - 1)
+	if count < 1 {
+		count = 1
+	}
+	interval := total / time.Duration(count)
+
+	time := data.NewFieldFromFieldType(data.FieldTypeTime, count+1)
+	time.Name = "Time"
+	frame := data.NewFrame("", time)
+
+	ease := make([]waves.EaseFunc, 0)
+	for key, f := range waves.EaseFunctions {
+		ease = append(ease, f)
+
+		val := data.NewFieldFromFieldType(data.FieldTypeFloat64, count+1)
+		val.Name = key
+		frame.Fields = append(frame.Fields, val)
+	}
+
+	t := query.TimeRange.From
+	for i := 0; i <= count; i++ {
+		p := float64(i) / float64(count)
+
+		for idx, f := range ease {
+			v := f(p)
+			frame.Fields[idx+1].Set(i, v)
+		}
+
+		time.Set(i, t)
+		t = t.Add(interval)
+	}
+
+	return backend.DataResponse{
+		Frames: data.Frames{frame},
 	}
 }

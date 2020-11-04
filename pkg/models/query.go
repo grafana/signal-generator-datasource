@@ -2,55 +2,38 @@ package models
 
 import (
 	"encoding/json"
-	"fmt"
+	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
+	"github.com/grafana/signal-generator-datasource/pkg/waves"
 )
-
-// QueryTypeEnum is the possible values for incoming queryType parameter
-type QueryTypeEnum string
 
 const (
-	// QueryTypeUsers -- show a list of users
-	QueryTypeUsers QueryTypeEnum = "users"
-
-	// QueryTypeRepos -- list the repositories
-	QueryTypeRepos = "repos"
-
-	// QueryTypeBuilds -- the last
-	QueryTypeBuilds = "builds"
-
-	// QueryTypeLogs -- the last
-	QueryTypeLogs = "logs"
-
-	// QueryTypeIncomplete -- the running buidls
-	QueryTypeIncomplete = "incomplete"
-
-	// QueryTypeNodes -- the last
-	QueryTypeNodes = "nodes"
-
-	// QueryTypeServers -- the current servers
-	QueryTypeServers = "servers"
+	QueryTypeAWG     = "AWG"
+	QueryTypeEasings = "easing"
 )
 
-// QueryModel represents
-type QueryModel struct {
-	QueryType QueryTypeEnum `json:"queryType,omitempty"`
+type SignalQuery struct {
+	Wave []waves.WaveformArgs `json:"wave,omitempty"` // all components get added together
 
-	// Not from JSON
-	TimeRange backend.TimeRange `json:"-"`
+	// These are added from the base query
+	Interval      time.Duration     `json:"-"`
+	TimeRange     backend.TimeRange `json:"-"`
+	MaxDataPoints int64             `json:"-"`
+	QueryType     string            `json:"-"`
 }
 
-// GetQueryModel returns the well typed query model
-func GetQueryModel(query backend.DataQuery) (*QueryModel, error) {
-	model := &QueryModel{}
-
-	err := json.Unmarshal(query.JSON, &model)
-	if err != nil {
-		return nil, fmt.Errorf("error reading query: %s", err.Error())
+func GetSignalQuery(dq *backend.DataQuery) (*SignalQuery, error) {
+	query := &SignalQuery{}
+	if err := json.Unmarshal(dq.JSON, query); err != nil {
+		return nil, err
 	}
 
-	// Copy directly from the well typed query
-	model.TimeRange = query.TimeRange
-	return model, nil
+	// add on the DataQuery params
+	query.TimeRange = dq.TimeRange
+	query.Interval = dq.Interval
+	query.MaxDataPoints = dq.MaxDataPoints
+	query.QueryType = dq.QueryType
+
+	return query, nil
 }

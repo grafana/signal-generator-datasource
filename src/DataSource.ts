@@ -1,23 +1,10 @@
-import { DataSourceInstanceSettings, DataQueryRequest, DataQueryResponse } from '@grafana/data';
+import { DataSourceInstanceSettings } from '@grafana/data';
 import { DataSourceWithBackend } from '@grafana/runtime';
-import { Observable } from 'rxjs';
 
-import { AWGQuery, AWGQueryType, AWGDatasourceOptions } from './types';
-import { listenToSocket } from 'live';
+import { SignalQuery, SignalDatasourceOptions } from './types';
 
-export class DataSource extends DataSourceWithBackend<AWGQuery, AWGDatasourceOptions> {
-  constructor(instanceSettings: DataSourceInstanceSettings<AWGDatasourceOptions>) {
+export class DataSource extends DataSourceWithBackend<SignalQuery, SignalDatasourceOptions> {
+  constructor(instanceSettings: DataSourceInstanceSettings<SignalDatasourceOptions>) {
     super(instanceSettings);
-  }
-
-  query(request: DataQueryRequest<AWGQuery>): Observable<DataQueryResponse> {
-    for (const target of request.targets) {
-      if (target.queryType === AWGQueryType.Stream) {
-        console.log('TODO... open websocket!');
-
-        return listenToSocket(target);
-      }
-    }
-    return super.query(request);
   }
 }

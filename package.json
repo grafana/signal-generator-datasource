@@ -1,31 +1,24 @@
 {
-  "name": "waveform-datasource",
+  "name": "signal-generator-datasource",
   "version": "0.0.1-dev",
   "description": "Signal generator",
   "scripts": {
-    "build": "rm -rf dist && grafana-toolkit plugin:build && mage",
+    "build": "rm -rf dist && grafana-toolkit plugin:build && mage build:backend",
     "test": "grafana-toolkit plugin:test",
-    "dev": "grafana-toolkit plugin:dev",
+    "dev": "rm -rf node_modules/@grafana/data/node_modules; grafana-toolkit plugin:dev",
     "watch": "grafana-toolkit plugin:dev --watch"
   },
-  "repository": "github:grafana/waveform-datasource",
+  "repository": "github:grafana/signal-generator-datasource",
   "author": "Grafana Labs <team@grafana.com> (https://grafana.com)",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@grafana/data": "next",
-    "@grafana/runtime": "next",
-    "@grafana/toolkit": "next",
-    "@grafana/ui": "next",
-    "@types/sockjs-client": "^1.1.1",
+    "@grafana/data": "latest",
+    "@grafana/runtime": "latest",
+    "@grafana/toolkit": "latest",
+    "@grafana/ui": "latest",
     "@types/lodash": "latest"
   },
   "volta": {
     "node": "12.16.3"
-  },
-  "dependencies": {
-    "centrifuge": "^2.6.4",
-    "sockjs-client": "^1.4.0",
-    "glob": "^7.1.6",
-    "minimatch": "^3.0.4"
   }
 }

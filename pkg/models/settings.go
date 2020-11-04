@@ -2,27 +2,18 @@ package models
 
 import (
 	"encoding/json"
-	"fmt"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 )
 
-// DatasourceSettings contains Settings needed for datasource
-type DatasourceSettings struct {
-	URL string
-
-	// Secure JSON
-	Token string
+type DatasurceSettings struct {
+	// nothing for now
 }
 
-// LoadSettings gets the relevant settings from the plugin context
-func LoadSettings(setting backend.DataSourceInstanceSettings) (*DatasourceSettings, error) {
-	model := &DatasourceSettings{}
-
-	err := json.Unmarshal(setting.JSONData, &model)
-	if err != nil {
-		return nil, fmt.Errorf("error reading settings: %s", err.Error())
+func GetDatasurceSettings(dsInfo backend.DataSourceInstanceSettings) (*DatasurceSettings, error) {
+	s := &DatasurceSettings{}
+	if err := json.Unmarshal(dsInfo.JSONData, s); err != nil {
+		return nil, err
 	}
-
-	return model, nil
+	return s, nil
 }

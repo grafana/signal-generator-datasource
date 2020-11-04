@@ -67,7 +67,8 @@ func triangleFunc(t time.Time, args *WaveformArgs) float64 {
 }
 
 func sincFunc(t time.Time, args *WaveformArgs) float64 {
-	x := getPeriodPercent(t, args)
+	p := getPeriodPercent(t, args)
+	x := p * 2 * math.Pi
 	return (math.Sin(x) / x) * args.Amplitude
 }
 

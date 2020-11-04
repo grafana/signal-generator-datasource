@@ -32,7 +32,23 @@ export const commonPeriods: Array<SelectableValue<string>> = [
 export class WaveEditor extends PureComponent<Props> {
   onQueryTypeChange = (sel: SelectableValue<WaveformType>) => {
     const { onChange, wave, index } = this.props;
-    onChange({ ...wave, type: sel.value! }, index);
+    const copy = { ...wave, type: sel.value! };
+    if (copy.type === WaveformType.CSV) {
+      if (!copy.ease) {
+        copy.ease = 'InOutQuad';
+      }
+      if (!copy.points) {
+        copy.points = [1, 0.5, 7, 3];
+      }
+      delete copy.duty;
+    }
+
+    if (copy.type === WaveformType.Square) {
+      copy.duty = 0.5;
+    } else {
+      delete copy.duty;
+    }
+    onChange(copy, index);
   };
 
   onPeriodChange = (sel: SelectableValue<string>) => {

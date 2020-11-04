@@ -130,7 +130,7 @@ func (ds *Datasource) doAWG(ctx context.Context, query *models.SignalQuery) (dr 
 		}
 		backend.Logger.Info("adding default wave", "wave", query.Wave)
 	}
-	backend.Logger.Info("AWG", "wave", query.Wave)
+	backend.Logger.Info("AWG", "wave", query.Wave, "")
 
 	wave := make([]waves.WaveformFunc, len(query.Wave))
 	for i, w := range query.Wave {

@@ -24,7 +24,7 @@ export const waveformTypes: Array<SelectableValue<WaveformType>> = [
   },
   {
     label: 'sin(x)/x',
-    value: WaveformType.Sawtooth,
+    value: WaveformType.Sinc,
     description: 'periodic spikes',
   },
   {

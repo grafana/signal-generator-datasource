@@ -35,23 +35,21 @@ func GetSignalQuery(dq *backend.DataQuery) (*SignalQuery, error) {
 
 	// Convert the string period arguments to seconds
 	if query.Wave != nil {
-		for _, wave := range query.Wave {
+		for idx, wave := range query.Wave {
 			if strings.HasPrefix(wave.Period, "range/") {
 				f, err := strconv.ParseFloat(wave.Period[6:], 64)
 				if err != nil {
 					return nil, fmt.Errorf("error reading wave period")
 				}
 				r := dq.TimeRange.To.Sub(dq.TimeRange.From).Seconds() / f
-				wave.PeriodSec = r
+				query.Wave[idx].PeriodSec = r
 			} else if wave.Period != "" {
 				r, err := time.ParseDuration(wave.Period)
 				if err != nil {
 					return nil, fmt.Errorf("error reading wave period")
 				}
-				wave.PeriodSec = r.Seconds()
+				query.Wave[idx].PeriodSec = r.Seconds()
 			}
-
-			backend.Logger.Info("PARSE", "wave", wave.Period, "ppp", wave.PeriodSec)
 		}
 	}
 

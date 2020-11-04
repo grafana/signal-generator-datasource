@@ -7,7 +7,8 @@ export enum QueryType {
 
 export enum WaveformType {
   Sin = 'Sin',
-  Pulse = 'Pulse',
+  Square = 'Square',
+  Triangle = 'Triangle',
   Sawtooth = 'Sawtooth',
   Sinc = 'Sinc',
   Noise = 'Noise',
@@ -16,15 +17,16 @@ export enum WaveformType {
 
 export interface WaveformArgs {
   type: WaveformType;
-  period: number; // in seconds
+  period: string; // converted to seconds
   amplitude: number;
-  duty?: number;
+  duty?: number; // % of the period that a squarewave is high
   points?: number[]; // for CSV
-  ease?: string; // Ease function
+  ease?: string; // Ease function for CSV
 }
 
 export interface SignalQuery extends DataQuery {
   queryType?: QueryType;
+  ease?: string; // ease function matcher
 }
 
 export interface SignalDatasourceOptions extends DataSourceJsonData {

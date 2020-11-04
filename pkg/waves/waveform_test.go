@@ -17,7 +17,7 @@ func getValues(check []time.Time, f WaveformFunc, args *WaveformArgs) []float64 
 
 func TestCSV(t *testing.T) {
 	args := &WaveformArgs{
-		Period:    10, // 10 seconds
+		PeriodSec: 10, // 10 seconds
 		Amplitude: 1,
 	}
 	start := time.Unix(0, 0)
@@ -94,7 +94,7 @@ func TestCSV(t *testing.T) {
 
 func TestNoise(t *testing.T) {
 	args := &WaveformArgs{
-		Period:    10, // 10 seconds
+		PeriodSec: 10, // 10 seconds
 		Amplitude: 1,
 	}
 	start := time.Unix(12345, 0)

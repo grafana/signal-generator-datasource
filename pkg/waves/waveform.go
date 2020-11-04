@@ -7,8 +7,9 @@ import (
 )
 
 type WaveformArgs struct {
-	Type      string    `json:"type,omitempty"`   // in seconds
-	Period    float64   `json:"period,omitempty"` // in seconds
+	Type      string    `json:"type,omitempty"`
+	Period    string    `json:"period,omitempty"`    // parse duration or range/X
+	PeriodSec float64   `json:"periodSec,omitempty"` // in seconds
 	Amplitude float64   `json:"amplitude,omitempty"`
 	DutyCycle float64   `json:"duty,omitempty"` // on time vs off time (0-1)
 	Points    []float64 `json:"points,omitempty"`
@@ -30,11 +31,11 @@ var WaveformFunctions = map[string]WaveformFunc{
 
 // Find where in the period things are
 func getPeriodPercent(t time.Time, args *WaveformArgs) float64 {
-	if args.Period <= 0 {
+	if args.PeriodSec <= 0 {
 		return 0
 	}
-	m := t.UnixNano() % int64(args.Period*1000000000)
-	return float64(m) / (args.Period * 1000000000)
+	m := t.UnixNano() % int64(args.PeriodSec*1000000000)
+	return float64(m) / (args.PeriodSec * 1000000000)
 }
 
 func sinFunc(t time.Time, args *WaveformArgs) float64 {

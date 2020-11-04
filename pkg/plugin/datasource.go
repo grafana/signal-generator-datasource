@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/gobwas/glob"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/grafana/signal-generator-datasource/pkg/models"
@@ -46,6 +47,8 @@ func (ds *Datasource) QueryData(ctx context.Context, req *backend.QueryDataReque
 
 func (ds *Datasource) doQuery(ctx context.Context, query *models.SignalQuery) backend.DataResponse {
 	switch query.QueryType {
+	case models.QueryTypeAWG:
+		return ds.doAWG(ctx, query)
 	case models.QueryTypeEasings:
 		return ds.doEasing(ctx, query)
 	}
@@ -54,8 +57,7 @@ func (ds *Datasource) doQuery(ctx context.Context, query *models.SignalQuery) ba
 	}
 }
 
-func (ds *Datasource) doEasing(ctx context.Context, query *models.SignalQuery) backend.DataResponse {
-
+func makeTimeAndPercent(query *models.SignalQuery) (*data.Field, *data.Field) {
 	total := query.TimeRange.To.Sub(query.TimeRange.From)
 	count := int(query.MaxDataPoints - 1)
 	if count < 1 {
@@ -65,31 +67,94 @@ func (ds *Datasource) doEasing(ctx context.Context, query *models.SignalQuery) b
 
 	time := data.NewFieldFromFieldType(data.FieldTypeTime, count+1)
 	time.Name = "Time"
-	frame := data.NewFrame("", time)
 
-	ease := make([]waves.EaseFunc, 0)
-	for key, f := range waves.EaseFunctions {
-		ease = append(ease, f)
-
-		val := data.NewFieldFromFieldType(data.FieldTypeFloat64, count+1)
-		val.Name = key
-		frame.Fields = append(frame.Fields, val)
-	}
+	percent := data.NewFieldFromFieldType(data.FieldTypeFloat64, count+1)
+	percent.Name = "Percent"
 
 	t := query.TimeRange.From
 	for i := 0; i <= count; i++ {
 		p := float64(i) / float64(count)
-
-		for idx, f := range ease {
-			v := f(p)
-			frame.Fields[idx+1].Set(i, v)
-		}
-
+		percent.Set(i, p)
 		time.Set(i, t)
 		t = t.Add(interval)
 	}
 
-	return backend.DataResponse{
-		Frames: data.Frames{frame},
+	return time, percent
+}
+
+func (ds *Datasource) doEasing(ctx context.Context, query *models.SignalQuery) (dr backend.DataResponse) {
+	if query.Ease == "" {
+		query.Ease = "*"
 	}
+
+	g, err := glob.Compile(query.Ease)
+	if err != nil {
+		dr.Error = err
+		return
+	}
+	backend.Logger.Info("MATCH", "fff", g, "pppp", query.Ease, "match", g.Match("QuadInOut"), "match2", g.Match("zzzzz"))
+
+	time, percent := makeTimeAndPercent(query)
+	frame := data.NewFrame("", time)
+	count := time.Len()
+
+	ease := make([]waves.EaseFunc, 0)
+	for key, f := range waves.EaseFunctions {
+		if g.Match(key) {
+			ease = append(ease, f)
+
+			val := data.NewFieldFromFieldType(data.FieldTypeFloat64, count)
+			val.Name = key
+			frame.Fields = append(frame.Fields, val)
+		}
+	}
+
+	for i := 0; i < count; i++ {
+		p, _ := percent.FloatAt(i)
+		for idx, f := range ease {
+			v := f(p)
+			frame.Fields[idx+1].Set(i, v)
+		}
+	}
+
+	dr.Frames = data.Frames{frame}
+	return
+}
+
+func (ds *Datasource) doAWG(ctx context.Context, query *models.SignalQuery) (dr backend.DataResponse) {
+	if len(query.Wave) < 1 {
+		query.Wave = make([]waves.WaveformArgs, 1)
+		query.Wave[0] = waves.WaveformArgs{
+			PeriodSec: 30,
+			Amplitude: 1,
+			Type:      "Sin",
+		}
+	}
+	wave := make([]waves.WaveformFunc, len(query.Wave))
+	for i, w := range query.Wave {
+		f, ok := waves.WaveformFunctions[w.Type]
+		if !ok {
+			dr.Error = fmt.Errorf("unknown waveform: %s", w.Type)
+			return
+		}
+		wave[i] = f
+	}
+
+	timef, val := makeTimeAndPercent(query)
+	frame := data.NewFrame("", timef, val)
+	count := timef.Len()
+	val.Name = "Value"
+
+	for i := 0; i < count; i++ {
+		t := timef.At(i).(time.Time)
+		v := float64(0)
+		for j, w := range wave {
+			args := query.Wave[j]
+			v += w(t, &args)
+		}
+		val.Set(i, v) // the calculated value
+	}
+
+	dr.Frames = data.Frames{frame}
+	return
 }

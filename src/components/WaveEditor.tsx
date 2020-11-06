@@ -1,6 +1,6 @@
 import React, { PureComponent } from 'react';
 import { SelectableValue } from '@grafana/data';
-import { Select, InlineField } from '@grafana/ui';
+import { Input, Select, InlineField } from '@grafana/ui';
 import { WaveformArgs, WaveformType } from '../types';
 import { waveformTypes } from '../info';
 
@@ -34,13 +34,14 @@ export class WaveEditor extends PureComponent<Props> {
     const { onChange, wave, index } = this.props;
     const copy = { ...wave, type: sel.value! };
     if (copy.type === WaveformType.CSV) {
-      if (!copy.ease) {
-        copy.ease = 'InOutQuad';
+      if (!copy.args) {
+        copy.args = 'InOutQuad';
       }
       if (!copy.points) {
         copy.points = [1, 0.5, 7, 3];
       }
-      delete copy.duty;
+    } else if (copy.type === WaveformType.Calculation) {
+      copy.args = 'sin(time)/time';
     }
 
     if (copy.type === WaveformType.Square) {
@@ -56,11 +57,30 @@ export class WaveEditor extends PureComponent<Props> {
     onChange({ ...wave, period: sel.value! }, index);
   };
 
-  onAmplitudeChange = (v: any) => {
-    // const { onChange, wave, index } = this.props;
-    // onChange({ ...wave, amplitude: v }, index);
-    console.log('AMP', v);
+  onAmplitudeChange = (v: React.SyntheticEvent<HTMLInputElement>) => {
+    const { onChange, wave, index } = this.props;
+    const amplitude = v.currentTarget.valueAsNumber;
+    onChange({ ...wave, amplitude }, index);
   };
+
+  onOffsetChange = (v: React.SyntheticEvent<HTMLInputElement>) => {
+    const { onChange, wave, index } = this.props;
+    const offset = v.currentTarget.valueAsNumber;
+    onChange({ ...wave, offset }, index);
+  };
+
+  onPhaseChange = (v: React.SyntheticEvent<HTMLInputElement>) => {
+    const { onChange, wave, index } = this.props;
+    const phase = v.currentTarget.valueAsNumber;
+    onChange({ ...wave, phase }, index);
+  };
+
+  onArgsChange = (v: React.SyntheticEvent<HTMLInputElement>) => {
+    const { onChange, wave, index } = this.props;
+    const args = v.currentTarget.value;
+    onChange({ ...wave, args }, index);
+  };
+
   render() {
     const { wave } = this.props;
     const periods = [...commonPeriods];
@@ -73,16 +93,69 @@ export class WaveEditor extends PureComponent<Props> {
       periods.push(period);
     }
 
+    if (wave.type === WaveformType.Calculation) {
+      return (
+        <>
+          <div className="gf-form">
+            <InlineField label=">>>" labelWidth={10}>
+              <Select
+                options={waveformTypes}
+                value={waveformTypes.find(v => v.value === wave.type)}
+                onChange={this.onQueryTypeChange}
+                placeholder="Select waveform"
+                menuPlacement="bottom"
+              />
+            </InlineField>
+            <InlineField label="Calculation" grow={true}>
+              <Input css="" value={wave.args || ''} onChange={this.onArgsChange} />
+            </InlineField>
+          </div>
+        </>
+      );
+    }
+
     return (
       <>
         <div className="gf-form">
-          <InlineField label="Query type" labelWidth={10} grow={true}>
+          <InlineField label=">>>" labelWidth={10} grow={true}>
             <Select
               options={waveformTypes}
               value={waveformTypes.find(v => v.value === wave.type)}
               onChange={this.onQueryTypeChange}
               placeholder="Select waveform"
               menuPlacement="bottom"
+            />
+          </InlineField>
+          <InlineField label="Amplitude">
+            <Input
+              css=""
+              type="number"
+              width={6}
+              step={0.1}
+              defaultValue={wave.amplitude || 1}
+              onBlur={this.onAmplitudeChange}
+            />
+          </InlineField>
+          <InlineField label="Offset">
+            <Input
+              css=""
+              type="number"
+              width={6}
+              step={0.1}
+              defaultValue={wave.offset || 0}
+              onBlur={this.onOffsetChange}
+            />
+          </InlineField>
+          <InlineField label="Phase">
+            <Input
+              css=""
+              type="number"
+              width={6}
+              step={0.1}
+              min={0}
+              max={1}
+              defaultValue={wave.phase || 0}
+              onBlur={this.onPhaseChange}
             />
           </InlineField>
           <InlineField label="Period">
@@ -94,9 +167,6 @@ export class WaveEditor extends PureComponent<Props> {
               allowCustomValue={true}
               menuPlacement="bottom"
             />
-          </InlineField>
-          <InlineField label="Amplitude">
-            <div>TODO</div>
           </InlineField>
         </div>
       </>

@@ -24,7 +24,7 @@ func TestCSV(t *testing.T) {
 
 	// zero points return amplitude
 	v := csvFunc(start, args)
-	if v != args.Amplitude {
+	if v != 0 {
 		t.Fail()
 	}
 
@@ -63,7 +63,7 @@ func TestCSV(t *testing.T) {
 	}
 
 	// Now with easing
-	args.Ease = "Linear"
+	args.Args = "Linear"
 	v = csvFunc(start.Add(time.Second*5), args)
 	if diff := cmp.Diff(float64(15), v); diff != "" {
 		t.Fatalf("unexpect results (-want +got):\n%s", diff)
@@ -108,7 +108,7 @@ func TestNoise(t *testing.T) {
 	vals := getValues(check, noiseFunc, args)
 	// Although random -- they should not change!
 	expect := []float64{
-		0.5367491172957387, 0.1766299338802182, 0.2666601488479602, 0.49694957953924485, 0.034433027373508215,
+		0.07349823459147742, -0.6467401322395636, -0.4666797023040796, -0.006100840921510309, -0.9311339452529835,
 	}
 	if diff := cmp.Diff(expect, vals); diff != "" {
 		t.Fatalf("unexpect results (-want +got):\n%s", diff)

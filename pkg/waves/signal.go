@@ -51,9 +51,18 @@ func NewSignalGen(wave SignalArgs, timeRange time.Duration) (*SignalGen, error) 
 			}
 			c.PeriodSec = r.Seconds()
 		}
+
+		// Clamp the phase
+		if c.Phase > 1 {
+			c.Phase = 1
+		}
+		if c.Phase < 0 {
+			c.Phase = 0
+		}
 	}
 
 	return &SignalGen{
+		wave: wave,
 		args: args,
 		comp: comp,
 	}, nil
@@ -63,7 +72,12 @@ func NewSignalGen(wave SignalArgs, timeRange time.Duration) (*SignalGen, error) 
 func (s *SignalGen) GetValue(t time.Time) float64 {
 	v := float64(0)
 	for i, f := range s.comp {
-		v += f(t, s.args[i])
+		a := s.args[i]
+		if a.Type == "Calculation" {
+			v += 0 // TODO -- needs context!
+		} else {
+			v += a.Offset + f(t, a)*a.Amplitude
+		}
 	}
 	return v
 }

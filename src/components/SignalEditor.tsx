@@ -1,8 +1,9 @@
 import React, { PureComponent } from 'react';
-import { InlineField } from '@grafana/ui';
+import { InlineField, Input, UnitPicker } from '@grafana/ui';
 import { SignalArgs, WaveformArgs } from '../types';
 import { defaultWave } from '../info';
 import { WaveEditor } from './WaveEditor';
+import { formatLabels, parseLabels } from '@grafana/data';
 
 interface Props {
   signal: SignalArgs;
@@ -29,6 +30,33 @@ export class SignalEditor extends PureComponent<Props> {
     );
   };
 
+  onNameChange = (v: React.SyntheticEvent<HTMLInputElement>) => {
+    const { onChange, signal, index } = this.props;
+    const name = v.currentTarget.value;
+    onChange({ ...signal, name }, index);
+  };
+
+  onLabelsChanged = (v: React.SyntheticEvent<HTMLInputElement>) => {
+    const { onChange, signal, index } = this.props;
+    const txt = v.currentTarget.value;
+    const labels = txt ? parseLabels(txt) : undefined;
+    onChange({ ...signal, labels }, index);
+  };
+
+  onUnitChanged = (v?: string) => {
+    const { onChange, signal, index } = this.props;
+    const copy = { ...signal };
+    if (v) {
+      if (!copy.config) {
+        copy.config = {};
+      }
+      copy.config.unit = v;
+    } else if (copy.config) {
+      delete copy.config.unit;
+    }
+    onChange(copy, index);
+  };
+
   render() {
     const { signal } = this.props;
     if (!signal.component) {
@@ -39,13 +67,18 @@ export class SignalEditor extends PureComponent<Props> {
       <>
         <div className="gf-form">
           <InlineField label="Signal" labelWidth={10} grow={true}>
-            <div>NAME</div>
+            <Input css="" value={signal.name || ''} onChange={this.onNameChange} placeholder="Field name" />
           </InlineField>
           <InlineField label="Labels">
-            <div>LABELS</div>
+            <Input
+              css=""
+              defaultValue={formatLabels(signal.labels!)}
+              onBlur={this.onLabelsChanged}
+              placeholder="labels"
+            />
           </InlineField>
           <InlineField label="Unit">
-            <div>UNIT</div>
+            <UnitPicker value={signal.config?.unit} onChange={this.onUnitChanged} width={15} />
           </InlineField>
         </div>
         {signal.component.map((w, idx) => {

@@ -5,6 +5,8 @@ export const defaultWave: WaveformArgs = {
   type: WaveformType.Sin,
   period: '1m',
   amplitude: 1,
+  offset: 0,
+  phase: 0,
 };
 
 export const defaultSignal: SignalArgs = {
@@ -34,11 +36,6 @@ export const waveformTypes: Array<SelectableValue<WaveformType>> = [
     description: 'fixed between minimum and maximum values',
   },
   {
-    label: 'sin(x)/x',
-    value: WaveformType.Sinc,
-    description: 'periodic spikes',
-  },
-  {
     label: 'Random noise',
     value: WaveformType.Noise,
     description: 'random values',
@@ -48,33 +45,12 @@ export const waveformTypes: Array<SelectableValue<WaveformType>> = [
     value: WaveformType.CSV,
     description: 'Animated values',
   },
+  {
+    label: 'Calculation',
+    value: WaveformType.Calculation,
+    description: 'Calculate a value',
+  },
 ];
-
-// "":       EaseLinear,
-// "":       ,
-// "":      easeOutQuad,
-// "":    easeInOutQuad,
-// "":      easeInCubic,
-// "":     easeOutCubic,
-// "":   easeInOutCubic,
-// "":      easeInQuart,
-// "":     easeOut,
-// "":   easeInOutQuart,
-// "":      easeIn,
-// "":     easeOutQuint,
-// "":   easeInOutQuint,
-// "":       easeInSine,
-// "":      easeOutSine,
-// "":    easeInOut,
-// "":       easeInExpo,
-// "":      easeOutExpo,
-// "":    easeInOut,
-// "":       easeInCirc,
-// "":      easeOutCirc,
-// "":    easeInOut,
-// "":       easeIn,
-// "":      easeOutBack,
-// "":    easeInOutBack,
 
 export const easeFunctions: Array<SelectableValue<string>> = [
   {

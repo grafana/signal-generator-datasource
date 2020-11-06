@@ -10,18 +10,20 @@ export enum WaveformType {
   Square = 'Square',
   Triangle = 'Triangle',
   Sawtooth = 'Sawtooth',
-  Sinc = 'Sinc',
   Noise = 'Noise',
   CSV = 'CSV',
+  Calculation = 'Calculation',
 }
 
 export interface WaveformArgs {
   type: WaveformType;
   period: string; // converted to seconds
   amplitude: number;
+  offset: number;
+  phase: number; // 0-1 shift in the period
   duty?: number; // % of the period that a squarewave is high
   points?: number[]; // for CSV
-  ease?: string; // Ease function for CSV
+  args?: string; // Ease function for CSV, Expression for 'Calculation'
 }
 
 export interface SignalArgs {

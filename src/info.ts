@@ -1,5 +1,16 @@
 import { SelectableValue } from '@grafana/data';
-import { WaveformType } from 'types';
+import { SignalArgs, WaveformArgs, WaveformType } from 'types';
+
+export const defaultWave: WaveformArgs = {
+  type: WaveformType.Sin,
+  period: '1m',
+  amplitude: 1,
+};
+
+export const defaultSignal: SignalArgs = {
+  name: '',
+  component: [{ ...defaultWave }],
+};
 
 export const waveformTypes: Array<SelectableValue<WaveformType>> = [
   {

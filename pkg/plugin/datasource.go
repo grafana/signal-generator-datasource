@@ -121,44 +121,31 @@ func (ds *Datasource) doEasing(ctx context.Context, query *models.SignalQuery) (
 }
 
 func (ds *Datasource) doAWG(ctx context.Context, query *models.SignalQuery) (dr backend.DataResponse) {
-	if len(query.Wave) < 1 {
-		query.Wave = make([]waves.WaveformArgs, 1)
-		query.Wave[0] = waves.WaveformArgs{
+	if len(query.Signal) < 1 {
+		comp := waves.WaveformArgs{
 			PeriodSec: 30,
 			Amplitude: 1,
 			Type:      "Sin",
 		}
-		backend.Logger.Info("adding default wave", "wave", query.Wave)
-	}
-	backend.Logger.Info("AWG", "wave", query.Wave, "")
 
-	wave := make([]waves.WaveformFunc, len(query.Wave))
-	for i, w := range query.Wave {
-		f, ok := waves.WaveformFunctions[w.Type]
-		if !ok {
-			dr.Error = fmt.Errorf("unknown waveform: %s", w.Type)
+		query.Signal = make([]waves.SignalArgs, 1)
+		query.Signal[0] = waves.SignalArgs{
+			Component: []waves.WaveformArgs{comp},
+		}
+	}
+
+	timeField, _ := makeTimeAndPercent(query)
+	frame := data.NewFrame("", timeField)
+	dr.Frames = data.Frames{frame}
+
+	timeRange := query.TimeRange.From.Sub(query.TimeRange.To)
+	for _, signal := range query.Signal {
+		gen, err := waves.NewSignalGen(signal, timeRange)
+		if err != nil {
+			dr.Error = err
 			return
 		}
-		wave[i] = f
-
-		backend.Logger.Info("RUN", "wave", w.PeriodSec, "www", w.Amplitude)
+		frame.Fields = append(frame.Fields, gen.GetField(timeField))
 	}
-
-	timef, val := makeTimeAndPercent(query)
-	frame := data.NewFrame("", timef, val)
-	count := timef.Len()
-	val.Name = "Value"
-
-	for i := 0; i < count; i++ {
-		t := timef.At(i).(time.Time)
-		v := float64(0)
-		for j, w := range wave {
-			args := query.Wave[j]
-			v += w(t, &args)
-		}
-		val.Set(i, v) // the calculated value
-	}
-
-	dr.Frames = data.Frames{frame}
 	return
 }

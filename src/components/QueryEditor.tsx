@@ -2,9 +2,9 @@ import React, { PureComponent } from 'react';
 import { QueryEditorProps, SelectableValue } from '@grafana/data';
 import { Select, InlineField } from '@grafana/ui';
 import { DataSource } from '../DataSource';
-import { SignalQuery, SignalDatasourceOptions, QueryType, WaveformType, WaveformArgs } from '../types';
-import { easeFunctionCategories, easeFunctions } from '../info';
-import { WaveEditor } from './WaveEditor';
+import { SignalQuery, SignalDatasourceOptions, QueryType, SignalArgs } from '../types';
+import { defaultSignal, easeFunctionCategories, easeFunctions } from '../info';
+import { SignalEditor } from './SignalEditor';
 
 type Props = QueryEditorProps<DataSource, SignalQuery, SignalDatasourceOptions>;
 
@@ -12,12 +12,6 @@ const queryTypes = [
   { label: 'Waveform', value: QueryType.AWG },
   { label: 'Easing', value: QueryType.Easing },
 ] as Array<SelectableValue<QueryType>>;
-
-const defaultWave: WaveformArgs = {
-  type: WaveformType.Sin,
-  period: '1m',
-  amplitude: 1,
-};
 
 export class QueryEditor extends PureComponent<Props> {
   componentDidMount() {
@@ -28,8 +22,8 @@ export class QueryEditor extends PureComponent<Props> {
       query.queryType = QueryType.AWG;
       changed = true;
     }
-    if (!query.wave) {
-      query.wave = [{ ...defaultWave }];
+    if (!query.signals) {
+      query.signals = [{ ...defaultSignal }];
       changed = true;
     }
     if (changed) {
@@ -49,27 +43,27 @@ export class QueryEditor extends PureComponent<Props> {
     onRunQuery();
   };
 
-  onWaveChange = (wave: WaveformArgs | undefined, index: number) => {
+  onSignalChange = (v: SignalArgs | undefined, index: number) => {
     const { onChange, query, onRunQuery } = this.props;
-    const copy = [...query.wave];
-    if (wave) {
-      copy[index] = wave;
+    const copy = [...query.signals];
+    if (v) {
+      copy[index] = v;
     } else {
       // Remove the value
       copy.splice(index, 1);
     }
-    onChange({ ...query, wave: copy });
+    onChange({ ...query, signals: copy });
     onRunQuery();
   };
 
   renderAWG() {
     const { query } = this.props;
-    let waves = query.wave;
-    if (!waves || !waves.length) {
-      waves = [{ ...defaultWave }];
+    let signals = query.signals;
+    if (!signals || !signals.length) {
+      signals = [{ ...defaultSignal }];
     }
-    return waves.map((wave, idx) => {
-      return <WaveEditor wave={wave} index={idx} key={idx} onChange={this.onWaveChange} />;
+    return signals.map((s, idx) => {
+      return <SignalEditor signal={s} index={idx} key={idx} onChange={this.onSignalChange} />;
     });
   }
 

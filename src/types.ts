@@ -1,4 +1,4 @@
-import { DataQuery, DataSourceJsonData } from '@grafana/data';
+import { DataQuery, DataSourceJsonData, FieldConfig, Labels } from '@grafana/data';
 
 export enum QueryType {
   AWG = 'AWG',
@@ -24,9 +24,16 @@ export interface WaveformArgs {
   ease?: string; // Ease function for CSV
 }
 
+export interface SignalArgs {
+  name: string;
+  component: WaveformArgs[];
+  config?: FieldConfig;
+  labels?: Labels;
+}
+
 export interface SignalQuery extends DataQuery {
   queryType?: QueryType;
-  wave?: WaveformArgs[];
+  signals?: SignalArgs[];
   ease?: string; // ease function matcher
 }
 

@@ -25,8 +25,9 @@ func GetDatasourceServeOpts() datasource.ServeOpts {
 	}
 
 	return datasource.ServeOpts{
-		CheckHealthHandler: handler,
-		QueryDataHandler:   handler,
+		CheckHealthHandler:  handler,
+		QueryDataHandler:    handler,
+		CallResourceHandler: handler,
 	}
 }
 
@@ -71,4 +72,16 @@ func (cr *DatasourceHandler) CheckHealth(ctx context.Context, req *backend.Check
 	}
 
 	return nil, dserrors.ErrorBadDatasource
+}
+
+func (cr *DatasourceHandler) CallResource(ctx context.Context, req *backend.CallResourceRequest, sender backend.CallResourceResponseSender) error {
+	h, err := cr.im.Get(req.PluginContext)
+	if err != nil {
+		return err
+	}
+
+	if ds, ok := h.(*Datasource); ok {
+		return ds.CallResource(ctx, req, sender)
+	}
+	return nil
 }

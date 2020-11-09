@@ -2,7 +2,9 @@ package plugin
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/gobwas/glob"
@@ -14,12 +16,40 @@ import (
 
 type Datasource struct {
 	settings *models.DatasurceSettings
+	streamer *SignalStreamer
 }
 
 func NewDatasource(settings *models.DatasurceSettings) *Datasource {
 	return &Datasource{
 		settings: settings,
+		streamer: &SignalStreamer{
+			speedMillis: 100,
+		},
 	}
+}
+
+func (ds *Datasource) CallResource(ctx context.Context, req *backend.CallResourceRequest, sender backend.CallResourceResponseSender) error {
+
+	cmd := &models.ActionCommand{}
+	if err := json.Unmarshal(req.Body, cmd); err != nil {
+		return err
+	}
+
+	for _, action := range cmd.Action {
+		if action.Path == "stream.start" {
+			backend.Logger.Info("START!!!")
+			ds.streamer.Start()
+		} else if action.Path == "stream.stop" {
+			backend.Logger.Info("STOP!!!")
+			ds.streamer.Stop()
+		} else {
+			backend.Logger.Info("???????????????")
+		}
+	}
+	return sender.Send(&backend.CallResourceResponse{
+		Status: http.StatusOK,
+		Body:   []byte("OK"),
+	})
 }
 
 func (ds *Datasource) HealthCheck(ctx context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {

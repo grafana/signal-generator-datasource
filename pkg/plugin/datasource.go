@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/gobwas/glob"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
@@ -87,31 +86,6 @@ func (ds *Datasource) doQuery(ctx context.Context, query *models.SignalQuery) ba
 	}
 }
 
-func makeTimeAndPercent(query *models.SignalQuery) (*data.Field, *data.Field) {
-	total := query.TimeRange.To.Sub(query.TimeRange.From)
-	count := int(query.MaxDataPoints - 1)
-	if count < 1 {
-		count = 1
-	}
-	interval := total / time.Duration(count)
-
-	time := data.NewFieldFromFieldType(data.FieldTypeTime, count+1)
-	time.Name = "Time"
-
-	percent := data.NewFieldFromFieldType(data.FieldTypeFloat64, count+1)
-	percent.Name = "Percent"
-
-	t := query.TimeRange.From
-	for i := 0; i <= count; i++ {
-		p := float64(i) / float64(count)
-		percent.Set(i, p)
-		time.Set(i, t)
-		t = t.Add(interval)
-	}
-
-	return time, percent
-}
-
 func (ds *Datasource) doEasing(ctx context.Context, query *models.SignalQuery) (dr backend.DataResponse) {
 	if query.Ease == "" {
 		query.Ease = "*"
@@ -123,7 +97,14 @@ func (ds *Datasource) doEasing(ctx context.Context, query *models.SignalQuery) (
 		return
 	}
 
-	time, percent := makeTimeAndPercent(query)
+	input, err := waves.MakeInputFields(query)
+	if err != nil {
+		dr.Error = err
+		return
+	}
+	time := input[0]
+	percent := input[1]
+
 	frame := data.NewFrame("", time)
 	count := time.Len()
 
@@ -151,31 +132,8 @@ func (ds *Datasource) doEasing(ctx context.Context, query *models.SignalQuery) (
 }
 
 func (ds *Datasource) doAWG(ctx context.Context, query *models.SignalQuery) (dr backend.DataResponse) {
-	if len(query.Signal) < 1 {
-		comp := waves.WaveformArgs{
-			PeriodSec: 30,
-			Amplitude: 1,
-			Type:      "Sin",
-		}
-
-		query.Signal = make([]waves.SignalArgs, 1)
-		query.Signal[0] = waves.SignalArgs{
-			Component: []waves.WaveformArgs{comp},
-		}
-	}
-
-	timeField, _ := makeTimeAndPercent(query)
-	frame := data.NewFrame("", timeField)
+	frame, err := waves.DoSignalQuery(query)
 	dr.Frames = data.Frames{frame}
-
-	timeRange := query.TimeRange.From.Sub(query.TimeRange.To)
-	for _, signal := range query.Signal {
-		gen, err := waves.NewSignalGen(signal, timeRange)
-		if err != nil {
-			dr.Error = err
-			return
-		}
-		frame.Fields = append(frame.Fields, gen.GetField(timeField))
-	}
+	dr.Error = err
 	return
 }

@@ -1,56 +1,95 @@
 import { SelectableValue } from '@grafana/data';
-import { SignalArgs, WaveformArgs, WaveformType } from 'types';
+import { SignalConfig } from 'types';
 
-export const defaultWave: WaveformArgs = {
-  type: WaveformType.Sin,
-  period: '1m',
-  amplitude: 1,
-  offset: 0,
-  phase: 0,
+export const defaultSignal: SignalConfig = {
+  fields: [{ name: 'Value', expr: 'Sine(x)' }],
 };
 
-export const defaultSignal: SignalArgs = {
-  name: '',
-  component: [{ ...defaultWave }],
-};
-
-export const waveformTypes: Array<SelectableValue<WaveformType>> = [
+export const standardWaves: Array<SelectableValue<string>> = [
   {
-    label: 'Sine Wave',
-    value: WaveformType.Sin,
+    label: 'Sine(x)',
+    value: 'Sine(x)',
     description: 'A curve that describes a smooth periodic oscillation',
   },
   {
-    label: 'Square Wave',
-    value: WaveformType.Square,
-    description: 'fixed between minimum and maximum values',
+    label: 'Triangle(x)',
+    value: 'Triangle(x)',
+    description: 'triangle qave',
   },
   {
-    label: 'Triangle Wave',
-    value: WaveformType.Triangle,
-    description: 'fixed between minimum and maximum values',
+    label: 'Square(x)',
+    value: 'Square(x)',
+    description: 'square wave with a 50% duty cycle',
   },
   {
-    label: 'Sawtooth Wave',
-    value: WaveformType.Sawtooth,
-    description: 'fixed between minimum and maximum values',
+    label: 'Square(x,0.2)',
+    value: 'Square(x,0.2)',
+    description: 'square wave with a 20% duty cycle',
   },
   {
-    label: 'Random noise',
-    value: WaveformType.Noise,
-    description: 'random values',
+    label: 'Square(x,0.8)',
+    value: 'Square(x,0.8)',
+    description: 'square wave with an 80% duty cycle',
   },
   {
-    label: 'CSV Values',
-    value: WaveformType.CSV,
-    description: 'Animated values',
+    label: 'Sawtooth(x)',
+    value: 'Sawtooth(x)',
+    description: 'square wave with a 50% duty cycle',
   },
   {
-    label: 'Calculation',
-    value: WaveformType.Calculation,
-    description: 'Calculate a value',
+    label: 'Noise()',
+    value: 'Noise()',
+    description: 'random values between +/- 1',
+  },
+  {
+    label: 'CSV(x,1,3,-1,-3)',
+    value: 'CSV(x,1,3,-1,-3)',
+    description: 'csv wave',
+  },
+  {
+    label: 'x',
+    value: 'x',
+    description: 'value that ramps between -Pi and +Pi depending on the period',
   },
 ];
+
+// export const waveformTypes: Array<SelectableValue<WaveformType>> = [
+//   {
+//     label: 'Sine Wave',
+//     value: WaveformType.Sin,
+//     description: 'A curve that describes a smooth periodic oscillation',
+//   },
+//   {
+//     label: 'Square Wave',
+//     value: WaveformType.Square,
+//     description: 'fixed between minimum and maximum values',
+//   },
+//   {
+//     label: 'Triangle Wave',
+//     value: WaveformType.Triangle,
+//     description: 'fixed between minimum and maximum values',
+//   },
+//   {
+//     label: 'Sawtooth Wave',
+//     value: WaveformType.Sawtooth,
+//     description: 'fixed between minimum and maximum values',
+//   },
+//   {
+//     label: 'Random noise',
+//     value: WaveformType.Noise,
+//     description: 'random values',
+//   },
+//   {
+//     label: 'CSV Values',
+//     value: WaveformType.CSV,
+//     description: 'Animated values',
+//   },
+//   {
+//     label: 'Calculation',
+//     value: WaveformType.Calculation,
+//     description: 'Calculate a value',
+//   },
+// ];
 
 export const easeFunctions: Array<SelectableValue<string>> = [
   {

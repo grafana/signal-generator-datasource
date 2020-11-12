@@ -2,96 +2,163 @@ package waves
 
 import (
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/Knetic/govaluate"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
+	"github.com/grafana/signal-generator-datasource/pkg/models"
 )
 
-type SignalArgs struct {
-	Name      string            `json:"name,omitempty"`
-	Component []WaveformArgs    `json:"component,omitempty"`
-	Config    *data.FieldConfig `json:"config,omitempty"`
-	Labels    data.Labels       `json:"labels,omitempty"`
+type SignalGenX struct {
+	args models.SignalConfig
+	expr []*govaluate.EvaluableExpression
 }
 
-type SignalGen struct {
-	wave SignalArgs
-	comp []WaveformFunc
-	args []*WaveformArgs
-}
-
-func NewSignalGen(wave SignalArgs, timeRange time.Duration) (*SignalGen, error) {
-	count := len(wave.Component)
-	comp := make([]WaveformFunc, count)
-	args := make([]*WaveformArgs, count)
-	for i := 0; i < count; i++ {
-		c := wave.Component[i]
-
-		f, ok := WaveformFunctions[c.Type]
-		if !ok {
-			return nil, fmt.Errorf("invalid waveform type: %s", c.Type)
+func NewSignalGenerator(args models.SignalConfig) (*SignalGenX, error) {
+	count := len(args.Fields)
+	expr := make([]*govaluate.EvaluableExpression, count)
+	for i, field := range args.Fields {
+		if len(field.Name) < 1 {
+			return nil, fmt.Errorf("invalid name for field %d", i)
 		}
-		comp[i] = f
-		args[i] = &c
-
-		// Normalize the period args
-		if strings.HasPrefix(c.Period, "range/") {
-			f, err := strconv.ParseFloat(c.Period[6:], 64)
-			if err != nil {
-				return nil, fmt.Errorf("error reading wave period")
-			}
-			r := timeRange.Seconds() / f
-			c.PeriodSec = r
-		} else if c.Period != "" {
-			r, err := time.ParseDuration(c.Period)
-			if err != nil {
-				return nil, fmt.Errorf("error reading wave period")
-			}
-			c.PeriodSec = r.Seconds()
+		ex, err := govaluate.NewEvaluableExpressionWithFunctions(field.Expr, WaveformFunctions)
+		if err != nil {
+			return nil, err
 		}
-
-		// Clamp the phase
-		if c.Phase > 1 {
-			c.Phase = 1
-		}
-		if c.Phase < 0 {
-			c.Phase = 0
-		}
+		expr[i] = ex
 	}
 
-	return &SignalGen{
-		wave: wave,
+	return &SignalGenX{
 		args: args,
-		comp: comp,
+		expr: expr,
 	}, nil
 }
 
-// Get the value for a
-func (s *SignalGen) GetValue(t time.Time) float64 {
-	v := float64(0)
-	for i, f := range s.comp {
-		a := s.args[i]
-		if a.Type == "Calculation" {
-			v += 0 // TODO -- needs context!
-		} else {
-			v += a.Offset + f(t, a)*a.Amplitude
+func DoSignalQuery(query *models.SignalQuery) (*data.Frame, error) {
+	if len(query.Signal.Fields) < 1 {
+		f0 := models.SignalField{
+			Name: "Hello",
+			Expr: "x",
+		}
+		f1 := models.SignalField{
+			Name: "Hello",
+			Expr: "Sine(x)/x",
+		}
+
+		query.Period = "10s"
+		query.Signal = models.SignalConfig{
+			Name:   "test",
+			Fields: []models.SignalField{f0, f1},
 		}
 	}
-	return v
+
+	gen, err := NewSignalGenerator(query.Signal)
+	if err != nil {
+		return nil, err
+	}
+
+	input, err := MakeInputFields(query)
+	if err != nil {
+		return nil, err
+	}
+
+	fields, err := gen.Calculate(input)
+	if err != nil {
+		return nil, err
+	}
+
+	frame := data.NewFrame(query.Signal.Name, append([]*data.Field{input[0]}, fields...)...)
+	return frame, nil
 }
 
-func (s *SignalGen) GetField(timeField *data.Field) *data.Field {
-	count := timeField.Len()
-	val := data.NewFieldFromFieldType(data.FieldTypeFloat64, count)
-	val.Name = s.wave.Name
-	val.Config = s.wave.Config
-	val.Labels = s.wave.Labels
+func (s *SignalGenX) Calculate(input []*data.Field) ([]*data.Field, error) {
+	fieldCount := len(s.expr)
+	rowCount := input[0].Len()
+	fields := make([]*data.Field, fieldCount)
 
-	for i := 0; i < count; i++ {
-		t := timeField.At(i).(time.Time)
-		val.Set(i, s.GetValue(t))
+	// Setup the fields
+	for i := 0; i < fieldCount; i++ {
+		fields[i] = data.NewFieldFromFieldType(data.FieldTypeFloat64, rowCount)
+		fields[i].Name = s.args.Fields[i].Name
+		fields[i].Config = s.args.Fields[i].Config
+		fields[i].Labels = s.args.Fields[i].Labels
 	}
-	return val
+
+	parameters := make(map[string]interface{}, fieldCount+4)
+	parameters["PI"] = math.Pi
+
+	for row := 0; row < rowCount; row++ {
+		for _, field := range input {
+			parameters[field.Name] = field.At(row)
+		}
+
+		for i, ex := range s.expr {
+			v, err := ex.Evaluate(parameters)
+			if err != nil {
+				v = nil
+			}
+			parameters[s.args.Fields[i].Name] = v
+			fields[i].Set(row, v)
+		}
+	}
+
+	return fields, nil
+}
+
+func MakeInputFields(query *models.SignalQuery) ([]*data.Field, error) {
+	period := 0.0
+
+	// Normalize the period args
+	if strings.HasPrefix(query.Period, "range/") {
+		f, err := strconv.ParseFloat(query.Period[6:], 64)
+		if err != nil {
+			return nil, fmt.Errorf("invalid range: %s", err.Error())
+		}
+
+		timeRange := query.TimeRange.From.Sub(query.TimeRange.To)
+		period = timeRange.Seconds() / f
+	} else if query.Period != "" {
+		r, err := time.ParseDuration(query.Period)
+		if err != nil {
+			return nil, fmt.Errorf("invalid period: %s", err.Error())
+		}
+		period = r.Seconds()
+	}
+
+	total := query.TimeRange.To.Sub(query.TimeRange.From)
+	count := int(query.MaxDataPoints - 1)
+	if count < 1 {
+		count = 1
+	}
+	interval := total / time.Duration(count)
+
+	time := data.NewFieldFromFieldType(data.FieldTypeTime, count+1)
+	time.Name = "time"
+
+	percent := data.NewFieldFromFieldType(data.FieldTypeFloat64, count+1)
+	percent.Name = "p"
+
+	x := data.NewFieldFromFieldType(data.FieldTypeFloat64, count+1)
+	x.Name = "x"
+
+	rad := 0.0
+	t := query.TimeRange.From
+	for i := 0; i <= count; i++ {
+		p := float64(i) / float64(count)
+
+		if period > 0 {
+			ms := t.UnixNano() % int64(period*1000000000)
+			rad = ((float64(ms) / (period * 1000000000)) * 2 * math.Pi) // 0 >> 2Pi
+		}
+
+		percent.Set(i, p)
+		time.Set(i, t)
+		x.Set(i, rad)
+		t = t.Add(interval)
+	}
+
+	return data.Fields{time, percent, x}, nil
 }

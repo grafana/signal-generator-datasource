@@ -11,7 +11,7 @@ import (
 
 // DatasourceHandler is the plugin entrypoint and implements all of the necessary handler functions for dataqueries, healthchecks, and resources.
 type SignalStreamer struct {
-	signal      *waves.SignalGen
+	signal      *waves.SignalGenX
 	channel     *GrafanaLiveChannel
 	running     bool
 	speedMillis int64
@@ -27,19 +27,19 @@ func (s *SignalStreamer) Start() {
 		return
 	}
 
-	if s.signal == nil {
-		a := &waves.WaveformArgs{
-			PeriodSec: 10,
-			Type:      "Sin",
-			Amplitude: 1,
-		}
+	// if s.signal == nil {
+	// 	// a := &waves.WaveformArgs{
+	// 	// 	PeriodSec: 10,
+	// 	// 	Type:      "Sin",
+	// 	// 	Amplitude: 1,
+	// 	// }
 
-		g, _ := waves.NewSignalGen(waves.SignalArgs{
-			Name:      "hello",
-			Component: []waves.WaveformArgs{*a},
-		}, time.Minute)
-		s.signal = g
-	}
+	// 	// g, _ := waves.NewSignalGen(waves.SignalArgs{
+	// 	// 	Name:      "hello",
+	// 	// 	Component: []waves.WaveformArgs{*a},
+	// 	// }, time.Minute)
+	// 	// s.signal = g
+	// }
 	if s.channel == nil {
 		c, err := InitGrafanaLiveChannel("ws://localhost:3000/live/ws", "grafana/measurements/signal")
 		if err != nil {
@@ -75,7 +75,7 @@ func (s *SignalStreamer) doStream() {
 			return
 		}
 
-		v := s.signal.GetValue(t)
+		v := 7 //s.signal.GetValue(t)
 
 		measurement.Time = t.UnixNano() / int64(time.Millisecond)
 		measurement.Values["value"] = v

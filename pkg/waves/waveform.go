@@ -1,9 +1,12 @@
 package waves
 
 import (
+	"fmt"
 	"math"
 	"math/rand"
 	"time"
+
+	"github.com/Knetic/govaluate"
 )
 
 type WaveformArgs struct {
@@ -22,8 +25,8 @@ type WaveformArgs struct {
 type WaveformFunc func(t time.Time, args *WaveformArgs) float64
 
 // Registry of known scaling functions
-var WaveformFunctions = map[string]WaveformFunc{
-	"Sin":      sinFunc,
+var WaveformFunctions = map[string]govaluate.ExpressionFunction{
+	"Sine":     sineFunc,
 	"Square":   squareFunc,
 	"Triangle": triangleFunc,
 	"Sawtooth": sawtoothFunc,
@@ -31,85 +34,120 @@ var WaveformFunctions = map[string]WaveformFunc{
 	"CSV":      csvFunc,
 }
 
-// Find where in the period things are
-func getPeriodPercent(t time.Time, args *WaveformArgs) float64 {
-	if args.PeriodSec <= 0 {
-		return 0
+func sineFunc(args ...interface{}) (interface{}, error) {
+	x, ok := args[0].(float64)
+	if !ok {
+		return 0, fmt.Errorf("should be a number!")
 	}
-	m := t.UnixNano() % int64(args.PeriodSec*1000000000)
-	p := (float64(m) / (args.PeriodSec * 1000000000)) + args.Phase
-	if p > 1 {
-		return p - 1 // wrap the phase
+	return math.Sin(x), nil
+}
+
+var grand = rand.New(rand.NewSource(0))
+
+func noiseFunc(args ...interface{}) (interface{}, error) {
+	r := grand
+	if len(args) > 0 {
+		x, ok := args[0].(int64)
+		if !ok {
+			return 0, fmt.Errorf("invalid seed")
+		}
+		r = rand.New(rand.NewSource(x)) // will be consistent for the value
 	}
-	return p
+	return (r.Float64() * 2) - 1, nil
 }
 
-func sinFunc(t time.Time, args *WaveformArgs) float64 {
-	x := getPeriodPercent(t, args)
-	return math.Sin(x * 2 * math.Pi)
-}
-
-func noiseFunc(t time.Time, args *WaveformArgs) float64 {
-	r := rand.New(rand.NewSource(t.UnixNano())) // will be consistent for the value
-	return (r.Float64() * 2) - 1
-}
-
-func squareFunc(t time.Time, args *WaveformArgs) float64 {
-	p := getPeriodPercent(t, args)
-	if p > args.DutyCycle {
-		return 1
+func squareFunc(args ...interface{}) (interface{}, error) {
+	x, ok := args[0].(float64)
+	if !ok {
+		return 0, fmt.Errorf("missing value")
 	}
-	return -1
+	dutyCycle := 0.5
+	if len(args) > 1 {
+		dutyCycle, ok = args[1].(float64)
+		if !ok {
+			return 0, fmt.Errorf("missing 0-1 duty")
+		}
+		if dutyCycle > 1 {
+			dutyCycle = 1
+		} else if dutyCycle < 0 {
+			dutyCycle = 0
+		}
+	}
+	p := (x) / (2 * math.Pi)
+	if p > dutyCycle {
+		return -1.0, nil
+	}
+	return 1.0, nil
 }
 
-func triangleFunc(t time.Time, args *WaveformArgs) float64 {
-	p := getPeriodPercent(t, args)
+func triangleFunc(args ...interface{}) (interface{}, error) {
+	x, ok := args[0].(float64)
+	if !ok {
+		return 0, fmt.Errorf("missing value")
+	}
+
+	p := (x) / (2.0 * math.Pi)
 	if p > 0.75 {
-		return ((p - .75) * 4) - 1
+		return ((p - .75) * 4.0) - 1.0, nil
 	}
 	if p > 0.25 {
-		return 1 - ((p - .25) * 4)
+		return 1 - ((p - .25) * 4.0), nil
 	}
-	return (p * 4)
+	return (p * 4.0), nil
+
+	// p := (x + math.Pi) / (2 * math.Pi)
+	// if p > 0.75 {
+	// 	return 4 - (p * 4.0), nil
+	// }
+	// if p > 0.25 {
+	// 	return ((p - .25) * 4) - 1.0, nil // GOOD
+	// }
+	// return (-p * 4.0), nil
 }
 
-func sawtoothFunc(t time.Time, args *WaveformArgs) float64 {
-	p := getPeriodPercent(t, args)
-	return (p * 2) - 1
-}
-
-func csvFunc(t time.Time, args *WaveformArgs) float64 {
-	count := float64(len(args.Points))
-	if count == 0 {
-		return 0 // center at zero
-	}
-	if count <= 1 {
-		return args.Points[0]
-	}
-
-	p := getPeriodPercent(t, args)
-	if p >= 1 { // return the last point
-		return args.Points[len(args.Points)-1]
-	}
-
-	// Step functions to each point
-	if args.Args == "" {
-		idx := int(math.Floor(p * count))
-		return args.Points[idx]
-	}
-
-	f, ok := EaseFunctions[args.Args]
+func sawtoothFunc(args ...interface{}) (interface{}, error) {
+	x, ok := args[0].(float64)
 	if !ok {
-		f = EaseLinear
+		return 0, fmt.Errorf("missing value")
 	}
+	return (x / math.Pi) - 1, nil
+}
 
-	idx := int(math.Floor(p * (count - 1)))
-	step := 1 / (count - 1)
-	stepp := p - (step * float64(idx))
+func csvFunc(args ...interface{}) (interface{}, error) {
 
-	start := args.Points[idx]
-	next := args.Points[idx+1]
-	delta := next - start
+	return 0, nil
 
-	return start + (f(stepp) * delta)
+	// count := float64(len(args.Points))
+	// if count == 0 {
+	// 	return 0 // center at zero
+	// }
+	// if count <= 1 {
+	// 	return args.Points[0]
+	// }
+
+	// p := getPeriodPercent(t, args)
+	// if p >= 1 { // return the last point
+	// 	return args.Points[len(args.Points)-1]
+	// }
+
+	// // Step functions to each point
+	// if args.Args == "" {
+	// 	idx := int(math.Floor(p * count))
+	// 	return args.Points[idx]
+	// }
+
+	// f, ok := EaseFunctions[args.Args]
+	// if !ok {
+	// 	f = EaseLinear
+	// }
+
+	// idx := int(math.Floor(p * (count - 1)))
+	// step := 1 / (count - 1)
+	// stepp := p - (step * float64(idx))
+
+	// start := args.Points[idx]
+	// next := args.Points[idx+1]
+	// delta := next - start
+
+	// return start + (f(stepp) * delta)
 }

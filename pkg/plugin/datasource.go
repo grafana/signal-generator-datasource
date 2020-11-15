@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/gobwas/glob"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/grafana/signal-generator-datasource/pkg/models"
@@ -78,58 +77,58 @@ func (ds *Datasource) doQuery(ctx context.Context, query *models.SignalQuery) ba
 	switch query.QueryType {
 	case models.QueryTypeAWG:
 		return ds.doAWG(ctx, query)
-	case models.QueryTypeEasings:
-		return ds.doEasing(ctx, query)
+		// case models.QueryTypeEasings:
+		// 	return ds.doEasing(ctx, query)
 	}
 	return backend.DataResponse{
 		Error: fmt.Errorf("unsupported query: %s", query.QueryType),
 	}
 }
 
-func (ds *Datasource) doEasing(ctx context.Context, query *models.SignalQuery) (dr backend.DataResponse) {
-	if query.Ease == "" {
-		query.Ease = "*"
-	}
+// func (ds *Datasource) doEasing(ctx context.Context, query *models.SignalQuery) (dr backend.DataResponse) {
+// 	if query.Ease == "" {
+// 		query.Ease = "*"
+// 	}
 
-	g, err := glob.Compile(query.Ease)
-	if err != nil {
-		dr.Error = err
-		return
-	}
+// 	g, err := glob.Compile(query.Ease)
+// 	if err != nil {
+// 		dr.Error = err
+// 		return
+// 	}
 
-	input, err := waves.MakeInputFields(query)
-	if err != nil {
-		dr.Error = err
-		return
-	}
-	time := input[0]
-	percent := input[1]
+// 	input, err := waves.MakeInputFields(query)
+// 	if err != nil {
+// 		dr.Error = err
+// 		return
+// 	}
+// 	time := input[0]
+// 	percent := input[1]
 
-	frame := data.NewFrame("", time)
-	count := time.Len()
+// 	frame := data.NewFrame("", time)
+// 	count := time.Len()
 
-	ease := make([]waves.EaseFunc, 0)
-	for key, f := range waves.EaseFunctions {
-		if g.Match(key) {
-			ease = append(ease, f)
+// 	ease := make([]waves.EaseFunc, 0)
+// 	for key, f := range waves.EaseFunctions {
+// 		if g.Match(key) {
+// 			ease = append(ease, f)
 
-			val := data.NewFieldFromFieldType(data.FieldTypeFloat64, count)
-			val.Name = key
-			frame.Fields = append(frame.Fields, val)
-		}
-	}
+// 			val := data.NewFieldFromFieldType(data.FieldTypeFloat64, count)
+// 			val.Name = key
+// 			frame.Fields = append(frame.Fields, val)
+// 		}
+// 	}
 
-	for i := 0; i < count; i++ {
-		p, _ := percent.FloatAt(i)
-		for idx, f := range ease {
-			v := f(p)
-			frame.Fields[idx+1].Set(i, v)
-		}
-	}
+// 	for i := 0; i < count; i++ {
+// 		p, _ := percent.FloatAt(i)
+// 		for idx, f := range ease {
+// 			v := f(p)
+// 			frame.Fields[idx+1].Set(i, v)
+// 		}
+// 	}
 
-	dr.Frames = data.Frames{frame}
-	return
-}
+// 	dr.Frames = data.Frames{frame}
+// 	return
+// }
 
 func (ds *Datasource) doAWG(ctx context.Context, query *models.SignalQuery) (dr backend.DataResponse) {
 	frame, err := waves.DoSignalQuery(query)

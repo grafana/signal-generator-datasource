@@ -22,16 +22,24 @@ export interface SignalField {
   labels?: Labels;
 }
 
+export interface TimeFieldConfig {
+  period: string;
+}
+export interface RangeFieldConfig {
+  min: number;
+  max: number;
+  ease?: string; // ease function matcher
+}
+
 export interface SignalConfig {
   name?: string;
+  time: TimeFieldConfig;
   fields: SignalField[];
 }
 
 export interface SignalQuery extends DataQuery {
   queryType?: QueryType;
   signal?: SignalConfig;
-  period: string;
-  ease?: string; // ease function matcher
 }
 
 export interface SignalDatasourceOptions extends DataSourceJsonData {

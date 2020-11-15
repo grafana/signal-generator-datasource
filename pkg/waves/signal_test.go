@@ -12,17 +12,21 @@ import (
 )
 
 func TestEval(t *testing.T) {
-	f0 := models.SignalField{
-		Name: "Hello",
+	f0 := models.ExpressionConfig{
+		BaseSignalField: models.BaseSignalField{
+			Name: "Hello",
+		},
 		Expr: "x",
 	}
 
 	query := &models.SignalQuery{
-		Period:        "10s",
 		MaxDataPoints: 10,
 		Signal: models.SignalConfig{
-			Name:   "test",
-			Fields: []models.SignalField{f0},
+			Name: "test",
+			Time: models.TimeFieldConfig{
+				Period: "10s",
+			},
+			Fields: []models.ExpressionConfig{f0},
 		},
 		TimeRange: backend.TimeRange{
 			From: time.Unix(0, 0),

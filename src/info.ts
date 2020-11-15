@@ -2,6 +2,9 @@ import { SelectableValue } from '@grafana/data';
 import { SignalConfig } from 'types';
 
 export const defaultSignal: SignalConfig = {
+  time: {
+    period: '1m',
+  },
   fields: [{ name: 'Value', expr: 'Sine(x)' }],
 };
 

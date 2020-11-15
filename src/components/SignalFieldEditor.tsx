@@ -85,7 +85,7 @@ export class SignalFieldEditor extends PureComponent<Props> {
     return (
       <>
         <div className="gf-form">
-          <InlineField label="Signal" labelWidth={10}>
+          <InlineField label="Field" labelWidth={8}>
             <Input width={10} css="" value={signal.name || ''} onChange={this.onNameChange} placeholder="Field" />
           </InlineField>
           <InlineField label="f(x)" grow={true}>

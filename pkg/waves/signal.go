@@ -12,120 +12,64 @@ import (
 	"github.com/grafana/signal-generator-datasource/pkg/models"
 )
 
-type SignalGenX struct {
-	args models.SignalConfig
-	expr []*govaluate.EvaluableExpression
+type SignalEnv = map[string]interface{}
+
+type SignalField interface {
+	GetConfig() *models.ExpressionConfig
+	GetValue(env map[string]interface{}) (interface{}, error)
 }
 
-func NewSignalGenerator(args models.SignalConfig) (*SignalGenX, error) {
-	count := len(args.Fields)
-	expr := make([]*govaluate.EvaluableExpression, count)
-	for i, field := range args.Fields {
-		if len(field.Name) < 1 {
-			return nil, fmt.Errorf("invalid name for field %d", i)
-		}
-		ex, err := govaluate.NewEvaluableExpressionWithFunctions(field.Expr, WaveformFunctions)
-		if err != nil {
-			return nil, err
-		}
-		expr[i] = ex
+type InputField interface {
+	GetConfig() *models.TimeFieldConfig
+	GetValues(query *models.SignalQuery) (rsp []*data.Field, env []*data.Field, err error)
+	UpdateEnv(time *time.Time, env map[string]interface{}) error
+}
+
+type signalFieldWithEval struct {
+	config *models.ExpressionConfig
+	expr   *govaluate.EvaluableExpression
+}
+
+func (f *signalFieldWithEval) GetConfig() *models.ExpressionConfig {
+	return f.config
+}
+
+func (f *signalFieldWithEval) GetValue(env map[string]interface{}) (interface{}, error) {
+	return f.expr.Evaluate(env)
+}
+
+func NewEvalSignalField(config *models.ExpressionConfig) (SignalField, error) {
+	if len(config.Name) < 1 {
+		return nil, fmt.Errorf("invalid name for field %v", config)
+	}
+	ex, err := govaluate.NewEvaluableExpressionWithFunctions(config.Expr, WaveformFunctions)
+	if err != nil {
+		return nil, err
 	}
 
-	return &SignalGenX{
-		args: args,
-		expr: expr,
+	// For now all expressions are numbers
+	config.DataType = data.FieldTypeFloat64
+	return &signalFieldWithEval{
+		config: config,
+		expr:   ex,
 	}, nil
 }
 
-func DoSignalQuery(query *models.SignalQuery) (*data.Frame, error) {
-	if len(query.Signal.Fields) < 1 {
-		f0 := models.SignalField{
-			Name: "Hello",
-			Expr: "x",
-		}
-		f1 := models.SignalField{
-			Name: "Hello",
-			Expr: "Sine(x)/x",
-		}
-
-		query.Period = "10s"
-		query.Signal = models.SignalConfig{
-			Name:   "test",
-			Fields: []models.SignalField{f0, f1},
-		}
-	}
-
-	gen, err := NewSignalGenerator(query.Signal)
-	if err != nil {
-		return nil, err
-	}
-
-	input, err := MakeInputFields(query)
-	if err != nil {
-		return nil, err
-	}
-
-	fields, err := gen.Calculate(input)
-	if err != nil {
-		return nil, err
-	}
-
-	frame := data.NewFrame(query.Signal.Name, append([]*data.Field{input[0]}, fields...)...)
-	return frame, nil
+type timeInputField struct {
+	config   *models.TimeFieldConfig
+	period   float64 // seconds
+	rangeDiv float64 // if the period depends on the range
 }
 
-func (s *SignalGenX) Calculate(input []*data.Field) ([]*data.Field, error) {
-	fieldCount := len(s.expr)
-	rowCount := input[0].Len()
-	fields := make([]*data.Field, fieldCount)
-
-	// Setup the fields
-	for i := 0; i < fieldCount; i++ {
-		fields[i] = data.NewFieldFromFieldType(data.FieldTypeFloat64, rowCount)
-		fields[i].Name = s.args.Fields[i].Name
-		fields[i].Config = s.args.Fields[i].Config
-		fields[i].Labels = s.args.Fields[i].Labels
-	}
-
-	parameters := make(map[string]interface{}, fieldCount+4)
-	parameters["PI"] = math.Pi
-
-	for row := 0; row < rowCount; row++ {
-		for _, field := range input {
-			parameters[field.Name] = field.At(row)
-		}
-
-		for i, ex := range s.expr {
-			v, err := ex.Evaluate(parameters)
-			if err != nil {
-				v = nil
-			}
-			parameters[s.args.Fields[i].Name] = v
-			fields[i].Set(row, v)
-		}
-	}
-
-	return fields, nil
+func (f *timeInputField) GetConfig() *models.TimeFieldConfig {
+	return f.config
 }
 
-func MakeInputFields(query *models.SignalQuery) ([]*data.Field, error) {
-	period := 0.0
-
-	// Normalize the period args
-	if strings.HasPrefix(query.Period, "range/") {
-		f, err := strconv.ParseFloat(query.Period[6:], 64)
-		if err != nil {
-			return nil, fmt.Errorf("invalid range: %s", err.Error())
-		}
-
+func (f *timeInputField) GetValues(query *models.SignalQuery) ([]*data.Field, []*data.Field, error) {
+	period := f.period
+	if f.rangeDiv > 0 {
 		timeRange := query.TimeRange.From.Sub(query.TimeRange.To)
-		period = timeRange.Seconds() / f
-	} else if query.Period != "" {
-		r, err := time.ParseDuration(query.Period)
-		if err != nil {
-			return nil, fmt.Errorf("invalid period: %s", err.Error())
-		}
-		period = r.Seconds()
+		period = timeRange.Seconds() / f.rangeDiv
 	}
 
 	total := query.TimeRange.To.Sub(query.TimeRange.From)
@@ -160,5 +104,127 @@ func MakeInputFields(query *models.SignalQuery) ([]*data.Field, error) {
 		t = t.Add(interval)
 	}
 
-	return data.Fields{time, percent, x}, nil
+	return []*data.Field{time}, []*data.Field{x, percent}, nil
+}
+
+func (f *timeInputField) UpdateEnv(t *time.Time, env map[string]interface{}) error {
+	ms := int64(0)
+	rad := 0.0
+
+	if f.period > 0 {
+		ms = t.UnixNano() % int64(f.period*1000000000)
+		rad = ((float64(ms) / (f.period * 1000000000)) * 2 * math.Pi) // 0 >> 2Pi
+	}
+	env["x"] = rad
+	return nil
+}
+
+func NewTimeInputField(config *models.TimeFieldConfig) (InputField, error) {
+	period := 0.0
+	rangeDiv := 0.0
+
+	if strings.HasPrefix(config.Period, "range/") {
+		f, err := strconv.ParseFloat(config.Period[6:], 64)
+		if err != nil {
+			return nil, fmt.Errorf("invalid range: %s", err.Error())
+		}
+		rangeDiv = f
+	} else if config.Period != "" {
+		r, err := time.ParseDuration(config.Period)
+		if err != nil {
+			return nil, fmt.Errorf("invalid period: %s", err.Error())
+		}
+		period = r.Seconds()
+	}
+
+	return &timeInputField{
+		config:   config,
+		period:   period,
+		rangeDiv: rangeDiv,
+	}, nil
+}
+
+type SignalGen struct {
+	Inputs []InputField
+	Fields []SignalField
+}
+
+func NewSignalGenerator(args models.SignalConfig) (*SignalGen, error) {
+	gen := &SignalGen{
+		Inputs: make([]InputField, 1),
+		Fields: make([]SignalField, len(args.Fields)),
+	}
+
+	t, err := NewTimeInputField(&args.Time)
+	if err != nil {
+		return nil, err
+	}
+	gen.Inputs[0] = t
+
+	for i, field := range args.Fields {
+		f, err := NewEvalSignalField(&field)
+		if err != nil {
+			return nil, err
+		}
+		gen.Fields[i] = f
+	}
+
+	return gen, nil
+}
+
+func DoSignalQuery(query *models.SignalQuery) (*data.Frame, error) {
+	gen, err := NewSignalGenerator(query.Signal)
+	if err != nil {
+		return nil, err
+	}
+
+	// Setup the initial fields
+	outfields := make([]*data.Field, 0)
+	envFields := make([]*data.Field, 0)
+	for _, i := range gen.Inputs {
+		rsp, env, err := i.GetValues(query)
+		if err != nil {
+			return nil, err
+		}
+
+		if rsp != nil {
+			outfields = append(outfields, rsp...)
+		}
+		if env != nil {
+			envFields = append(envFields, env...)
+		}
+	}
+
+	rowCount := outfields[0].Len()
+	fields := make([]*data.Field, len(gen.Fields))
+	for i, f := range gen.Fields {
+		cfg := f.GetConfig()
+		fields[i] = data.NewFieldFromFieldType(data.FieldTypeFloat64, rowCount)
+		fields[i].Name = cfg.Name
+		fields[i].Config = cfg.Config
+		fields[i].Labels = cfg.Labels
+	}
+
+	paramCount := len(gen.Fields) + len(envFields) + 4
+	parameters := make(map[string]interface{}, paramCount)
+	parameters["PI"] = math.Pi
+
+	for row := 0; row < rowCount; row++ {
+		for _, field := range envFields {
+			parameters[field.Name] = field.At(row)
+		}
+
+		for i, ex := range gen.Fields {
+			v, err := ex.GetValue(parameters)
+			if err != nil {
+				v = nil
+			}
+			parameters[fields[i].Name] = v
+			fields[i].Set(row, v)
+		}
+	}
+
+	outfields = append(outfields, fields...)
+	frame := data.NewFrame(query.Signal.Name, outfields...)
+	return frame, nil
 }

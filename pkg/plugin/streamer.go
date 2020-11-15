@@ -11,7 +11,7 @@ import (
 
 // DatasourceHandler is the plugin entrypoint and implements all of the necessary handler functions for dataqueries, healthchecks, and resources.
 type SignalStreamer struct {
-	signal      *waves.SignalGenX
+	signal      *waves.SignalGen
 	channel     *GrafanaLiveChannel
 	running     bool
 	speedMillis int64
@@ -27,19 +27,38 @@ func (s *SignalStreamer) Start() {
 		return
 	}
 
-	// if s.signal == nil {
-	// 	// a := &waves.WaveformArgs{
-	// 	// 	PeriodSec: 10,
-	// 	// 	Type:      "Sin",
-	// 	// 	Amplitude: 1,
-	// 	// }
+	if s.signal == nil {
+		cfg := models.SignalConfig{
+			Time: models.TimeFieldConfig{
+				Period: "5s",
+			},
+			Fields: []models.ExpressionConfig{},
+		}
+		cfg.Fields = append(cfg.Fields, models.ExpressionConfig{
+			BaseSignalField: models.BaseSignalField{
+				Name: "A",
+			},
+			Expr: "Sine(x)",
+		})
+		cfg.Fields = append(cfg.Fields, models.ExpressionConfig{
+			BaseSignalField: models.BaseSignalField{
+				Name: "B",
+			},
+			Expr: "Sine(x+1)",
+		})
+		cfg.Fields = append(cfg.Fields, models.ExpressionConfig{
+			BaseSignalField: models.BaseSignalField{
+				Name: "C",
+			},
+			Expr: "Sine(x+1.5)*2",
+		})
 
-	// 	// g, _ := waves.NewSignalGen(waves.SignalArgs{
-	// 	// 	Name:      "hello",
-	// 	// 	Component: []waves.WaveformArgs{*a},
-	// 	// }, time.Minute)
-	// 	// s.signal = g
-	// }
+		gen, _ := waves.NewSignalGenerator(cfg)
+		if gen != nil {
+			s.signal = gen
+		}
+	}
+
 	if s.channel == nil {
 		c, err := InitGrafanaLiveChannel("ws://localhost:3000/live/ws", "grafana/measurements/signal")
 		if err != nil {

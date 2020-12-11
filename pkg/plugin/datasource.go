@@ -21,7 +21,7 @@ func NewDatasource(settings *models.DatasurceSettings) *Datasource {
 	return &Datasource{
 		settings: settings,
 		streamer: &SignalStreamer{
-			speedMillis: 100,
+			speedMillis: 50, // 20hz
 		},
 	}
 }

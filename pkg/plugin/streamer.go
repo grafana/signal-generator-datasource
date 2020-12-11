@@ -2,9 +2,11 @@ package plugin
 
 import (
 	"encoding/json"
+	"math"
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
+	"github.com/grafana/grafana-plugin-sdk-go/measurement"
 	"github.com/grafana/signal-generator-datasource/pkg/models"
 	"github.com/grafana/signal-generator-datasource/pkg/waves"
 )
@@ -44,7 +46,7 @@ func (s *SignalStreamer) Start() {
 			BaseSignalField: models.BaseSignalField{
 				Name: "B",
 			},
-			Expr: "Sine(x+1)",
+			Expr: "Sine(x+1.5) * 2 + Noise() * 0.4", // + Noise()*.5",
 		})
 		cfg.Fields = append(cfg.Fields, models.ExpressionConfig{
 			BaseSignalField: models.BaseSignalField{
@@ -69,24 +71,31 @@ func (s *SignalStreamer) Start() {
 	}
 
 	if s.speedMillis < 10 {
-		s.speedMillis = 1000
+		s.speedMillis = 2500
 	}
 
 	go s.doStream()
+	//s.doStream()
 }
 
 func (s *SignalStreamer) doStream() {
 	s.running = true
 	ticker := time.NewTicker(time.Duration(s.speedMillis) * time.Millisecond)
 
-	measurement := models.Measurement{
+	m := measurement.Measurement{
 		Name:   "Example",
 		Time:   0,
 		Values: make(map[string]interface{}, 5),
 	}
-	msg := models.MeasurementBatch{
-		Measurements: []models.Measurement{measurement}, // always a single measurement
+	msg := measurement.Batch{
+		Measurements: []measurement.Measurement{m}, // always a single measurement
 	}
+
+	paramCount := len(s.signal.Fields) + 4
+	parameters := make(map[string]interface{}, paramCount)
+	parameters["PI"] = math.Pi
+
+	backend.Logger.Info("START STREAMING", "sig", s.signal)
 
 	for t := range ticker.C {
 		if !s.running {
@@ -94,10 +103,26 @@ func (s *SignalStreamer) doStream() {
 			return
 		}
 
-		v := 7 //s.signal.GetValue(t)
+		m.Time = t.UnixNano() / int64(time.Millisecond)
 
-		measurement.Time = t.UnixNano() / int64(time.Millisecond)
-		measurement.Values["value"] = v
+		// Set the time
+		for _, i := range s.signal.Inputs {
+			err := i.UpdateEnv(&t, parameters)
+			if err != nil {
+				backend.Logger.Warn("ERROR updating time", "error", err)
+			}
+		}
+
+		// Calculate each value
+		for _, f := range s.signal.Fields {
+			v, err := f.GetValue(parameters)
+			if err != nil {
+				v = nil
+			}
+			name := f.GetConfig().Name
+			parameters[name] = v
+			m.Values[name] = v
+		}
 
 		bytes, err := json.Marshal(&msg)
 		if err != nil {

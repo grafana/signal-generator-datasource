@@ -161,8 +161,8 @@ func NewSignalGenerator(args models.SignalConfig) (*SignalGen, error) {
 	}
 	gen.Inputs[0] = t
 
-	for i, field := range args.Fields {
-		f, err := NewEvalSignalField(&field)
+	for i := range args.Fields {
+		f, err := NewEvalSignalField(&args.Fields[i])
 		if err != nil {
 			return nil, err
 		}

@@ -3,21 +3,20 @@ import { Button, Icon, InlineField, Input, Select, UnitPicker } from '@grafana/u
 import { SignalField } from '../types';
 import { formatLabels, parseLabels, SelectableValue } from '@grafana/data';
 import { standardWaves } from 'info';
+import { InputActionMeta } from '@grafana/ui/components/Select/types';
 
 interface Props {
   signal: SignalField;
   index: number;
-  onChange: (value: SignalField | undefined, index: number) => void;
+  onChange: (value: SignalField | undefined, index: number, skipQuery?: boolean) => void;
   onAddExpr?: () => void;
 }
 
 export class SignalFieldEditor extends PureComponent<Props> {
-  onExprInputChanged = (v: React.SyntheticEvent<HTMLInputElement>) => {
-    this.onNewExpr(v.currentTarget.value);
-  };
-
   onExprChange = (sel: SelectableValue<string>) => {
-    this.onNewExpr(sel.value!);
+    if (sel.value) {
+      this.onNewExpr(sel.value);
+    }
   };
 
   onNewExpr = (expr: string) => {
@@ -25,10 +24,19 @@ export class SignalFieldEditor extends PureComponent<Props> {
     onChange({ ...signal, expr }, index);
   };
 
+  onExprTyped = (expr: string, actionMeta: InputActionMeta) => {
+    if (expr || actionMeta.action === 'input-change') {
+      const { onChange, signal, index } = this.props;
+      onChange({ ...signal, expr }, index, true);
+    } else {
+      console.log('SKIP', expr, actionMeta);
+    }
+  };
+
   onNameChange = (v: React.SyntheticEvent<HTMLInputElement>) => {
     const { onChange, signal, index } = this.props;
     const name = v.currentTarget.value;
-    onChange({ ...signal, name }, index);
+    onChange({ ...signal, name }, index, true);
   };
 
   onLabelsChanged = (v: React.SyntheticEvent<HTMLInputElement>) => {
@@ -90,15 +98,12 @@ export class SignalFieldEditor extends PureComponent<Props> {
           </InlineField>
           <InlineField label="f(x)" grow={true}>
             <Select
+              inputValue={signal.expr ?? ''}
+              onInputChange={this.onExprTyped}
               options={exprs}
               value={currentFn}
               onChange={this.onExprChange}
               placeholder="Function"
-              allowCustomValue={true}
-              isClearable={true}
-              isSearchable={true}
-              formatCreateLabel={txt => `fn: ${txt}`}
-              onCreateOption={this.onNewExpr}
               menuPlacement="bottom"
             />
           </InlineField>

@@ -45,7 +45,7 @@ export class QueryEditor extends PureComponent<Props> {
     onRunQuery();
   };
 
-  onSignalFieldChange = (v: SignalField | undefined, index: number) => {
+  onSignalFieldChange = (v: SignalField | undefined, index: number, skipQuery?: boolean) => {
     const { onChange, query, onRunQuery } = this.props;
     const signal = { ...query.signal! };
     const fields = [...signal.fields];
@@ -56,9 +56,10 @@ export class QueryEditor extends PureComponent<Props> {
       fields.splice(index, 1);
     }
     signal.fields = fields;
-
     onChange({ ...query, signal });
-    onRunQuery();
+    if (!skipQuery) {
+      onRunQuery();
+    }
   };
 
   onAddExpr = () => {

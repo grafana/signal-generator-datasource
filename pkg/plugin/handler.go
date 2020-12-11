@@ -37,6 +37,9 @@ func NewServerInstance(settings backend.DataSourceInstanceSettings) (instancemgm
 		return nil, err
 	}
 	ds := NewDatasource(s)
+
+	backend.Logger.Info("START server", "xx", ds.streamer.running)
+	ds.streamer.Start()
 	return ds, nil
 }
 

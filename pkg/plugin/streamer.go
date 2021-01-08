@@ -2,6 +2,7 @@ package plugin
 
 import (
 	"encoding/json"
+	"fmt"
 	"math"
 	"time"
 
@@ -36,24 +37,35 @@ func (s *SignalStreamer) Start() {
 			},
 			Fields: []models.ExpressionConfig{},
 		}
-		cfg.Fields = append(cfg.Fields, models.ExpressionConfig{
-			BaseSignalField: models.BaseSignalField{
-				Name: "A",
-			},
-			Expr: "Sine(x)",
-		})
-		cfg.Fields = append(cfg.Fields, models.ExpressionConfig{
-			BaseSignalField: models.BaseSignalField{
-				Name: "B",
-			},
-			Expr: "Sine(x+1.5) * 2 + Noise() * 0.4", // + Noise()*.5",
-		})
-		cfg.Fields = append(cfg.Fields, models.ExpressionConfig{
-			BaseSignalField: models.BaseSignalField{
-				Name: "C",
-			},
-			Expr: "Sine(x+1.5)*2",
-		})
+		// cfg.Fields = append(cfg.Fields, models.ExpressionConfig{
+		// 	BaseSignalField: models.BaseSignalField{
+		// 		Name: "A",
+		// 	},
+		// 	Expr: "Sine(x)",
+		// })
+		// cfg.Fields = append(cfg.Fields, models.ExpressionConfig{
+		// 	BaseSignalField: models.BaseSignalField{
+		// 		Name: "B",
+		// 	},
+		// 	Expr: "Sine(x+1.5) * 2 + Noise() * 0.4", // + Noise()*.5",
+		// })
+		// cfg.Fields = append(cfg.Fields, models.ExpressionConfig{
+		// 	BaseSignalField: models.BaseSignalField{
+		// 		Name: "C",
+		// 	},
+		// 	Expr: "Sine(x+1.5)*2",
+		// })
+
+		for i := 1; i < 5; i++ {
+			off := float64(i) * 0.1
+
+			cfg.Fields = append(cfg.Fields, models.ExpressionConfig{
+				BaseSignalField: models.BaseSignalField{
+					Name: fmt.Sprintf("Q%d", i),
+				},
+				Expr: fmt.Sprintf("Sine(x+%f) * %f", off*1.2, off*0.6), // + Noise()*.5",
+			})
+		}
 
 		gen, _ := waves.NewSignalGenerator(cfg)
 		if gen != nil {

@@ -2,16 +2,15 @@ package waves
 
 import (
 	"testing"
-	"time"
 )
 
-func getValues(check []time.Time, f WaveformFunc, args *WaveformArgs) []float64 {
-	res := make([]float64, len(check))
-	for idx, t := range check {
-		res[idx] = f(t, args)
-	}
-	return res
-}
+// func getValues(check []time.Time, f WaveformFunc, args *WaveformArgs) []float64 {
+// 	res := make([]float64, len(check))
+// 	for idx, t := range check {
+// 		res[idx] = f(t, args)
+// 	}
+// 	return res
+// }
 
 func TestCSV(t *testing.T) {
 	// 	args := &WaveformArgs{

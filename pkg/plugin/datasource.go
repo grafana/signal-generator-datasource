@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/grafana/grafana-edge-app/pkg/actions"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/grafana/signal-generator-datasource/pkg/models"
@@ -28,12 +29,12 @@ func NewDatasource(settings *models.DatasurceSettings) *Datasource {
 
 func (ds *Datasource) CallResource(ctx context.Context, req *backend.CallResourceRequest, sender backend.CallResourceResponseSender) error {
 
-	cmd := &models.ActionCommand{}
+	cmd := &actions.ActionCommand{}
 	if err := json.Unmarshal(req.Body, cmd); err != nil {
 		return err
 	}
 
-	for _, action := range cmd.Action {
+	for _, action := range cmd.Write {
 		if action.Path == "stream.start" {
 			backend.Logger.Info("START!!!")
 			ds.streamer.Start()

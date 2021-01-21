@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
+	"github.com/grafana/grafana-plugin-sdk-go/live"
 	"github.com/grafana/grafana-plugin-sdk-go/measurement"
 	"github.com/grafana/signal-generator-datasource/pkg/models"
 	"github.com/grafana/signal-generator-datasource/pkg/waves"
@@ -15,7 +16,7 @@ import (
 // DatasourceHandler is the plugin entrypoint and implements all of the necessary handler functions for dataqueries, healthchecks, and resources.
 type SignalStreamer struct {
 	signal      *waves.SignalGen
-	channel     *GrafanaLiveChannel
+	channel     *live.GrafanaLiveChannel
 	running     bool
 	speedMillis int64
 }
@@ -74,12 +75,18 @@ func (s *SignalStreamer) Start() {
 	}
 
 	if s.channel == nil {
-		c, err := InitGrafanaLiveChannel("ws://localhost:3000/live/ws", "grafana/measurements/signal")
+		c, err := live.InitGrafanaLiveClient(live.ConnectionInfo{
+			URL: "http://localhost:3000/",
+		})
 		if err != nil {
 			backend.Logger.Error("error starting live")
 			return
 		}
-		s.channel = c
+		s.channel, _ = c.Subscribe(live.ChannelAddress{
+			Scope:     "grafana",
+			Namespace: "measurements",
+			Path:      "signal",
+		})
 	}
 
 	if s.speedMillis < 10 {

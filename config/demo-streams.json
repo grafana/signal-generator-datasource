@@ -1,0 +1,15 @@
+{
+  "name": "sine-waves",
+  "interval": "100ms",
+  "tags": [
+    {
+      "path": "Sine(x + .2) * 0.2"
+    },
+    {
+      "path": "Sine(x + .3) * 0.3"
+    },
+    {
+      "path": "Sine(x + .4) * 0.4"
+    }
+  ]
+}

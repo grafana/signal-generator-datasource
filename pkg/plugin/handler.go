@@ -38,8 +38,11 @@ func NewServerInstance(settings backend.DataSourceInstanceSettings) (instancemgm
 	}
 	ds := NewDatasource(s)
 
-	backend.Logger.Info("START server", "xx", ds.streamer.running)
-	ds.streamer.Start()
+	for k, v := range ds.streams {
+		backend.Logger.Info("START streaming", "xx", k)
+		v.Start()
+	}
+
 	return ds, nil
 }
 

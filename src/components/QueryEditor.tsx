@@ -12,6 +12,7 @@ type Props = QueryEditorProps<DataSource, SignalQuery, SignalDatasourceOptions>;
 const queryTypes = [
   { label: 'Signal Generator', value: QueryType.AWG },
   { label: 'Variables', value: QueryType.Easing },
+  { label: 'Streams', value: QueryType.Streams },
 ] as Array<SelectableValue<QueryType>>;
 
 export class QueryEditor extends PureComponent<Props> {
@@ -135,7 +136,7 @@ export class QueryEditor extends PureComponent<Props> {
           <InlineField label="Query" labelWidth={8} grow={true}>
             <Select
               options={queryTypes}
-              value={queryTypes.find(v => v.value === query.queryType)}
+              value={queryTypes.find((v) => v.value === query.queryType)}
               onChange={this.onQueryTypeChange}
               placeholder="Select query type"
               menuPlacement="bottom"

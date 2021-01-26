@@ -77,7 +77,7 @@ export class SignalFieldEditor extends PureComponent<Props> {
     const { signal, onAddExpr } = this.props;
     const exprs = [...standardWaves];
 
-    let currentFn = exprs.find(e => e.value === signal.expr);
+    let currentFn = exprs.find((e) => e.value === signal.expr);
     if (!currentFn) {
       if (signal.expr) {
         currentFn = {

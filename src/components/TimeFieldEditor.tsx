@@ -49,7 +49,7 @@ export class TimeFieldEditor extends PureComponent<Props> {
   render() {
     const { time } = this.props;
     const periods = [...commonPeriods];
-    let period = periods.find(p => p.value === time?.period);
+    let period = periods.find((p) => p.value === time?.period);
     if (!period && time?.period) {
       period = {
         label: time.period,

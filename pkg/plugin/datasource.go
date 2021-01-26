@@ -2,49 +2,79 @@ package plugin
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 
-	"github.com/grafana/grafana-edge-app/pkg/actions"
+	"github.com/grafana/grafana-edge-app/pkg/tags"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
+	"github.com/grafana/grafana-plugin-sdk-go/live"
 	"github.com/grafana/signal-generator-datasource/pkg/models"
 	"github.com/grafana/signal-generator-datasource/pkg/waves"
 )
 
 type Datasource struct {
+	live     *live.GrafanaLiveClient
 	settings *models.DatasurceSettings
-	streamer *SignalStreamer
+	streams  map[string]*SignalStreamer
 }
 
 func NewDatasource(settings *models.DatasurceSettings) *Datasource {
+	client, _ := live.InitGrafanaLiveClient(live.ConnectionInfo{
+		URL: settings.LiveURL,
+	})
+
+	// Initalize streams
+	streams := make(map[string]*SignalStreamer)
+	for _, path := range settings.Capture {
+		if client == nil {
+			backend.Logger.Error("missing live server connection")
+			continue
+		}
+
+		cfg, err := tags.LoadCaptureSetConfig(path)
+		if err != nil {
+			backend.Logger.Error("error loading config", "err", err, "path", path)
+		} else if len(cfg.Flags) > 0 {
+			backend.Logger.Error("flags not supported", "path", path)
+		} else {
+			stream, err := NewSignalStreamer(cfg, client)
+			if err != nil {
+				backend.Logger.Error("error initalizing stream", "err", err, "path", path)
+			} else {
+				streams[cfg.Name] = stream
+			}
+		}
+	}
+
 	return &Datasource{
 		settings: settings,
-		streamer: &SignalStreamer{
-			speedMillis: 50, // 20hz
-		},
+		live:     client,
+		streams:  streams,
+		// streamer: &SignalStreamer{
+		// 	speedMillis: 50, // 20hz
+		// },
 	}
 }
 
 func (ds *Datasource) CallResource(ctx context.Context, req *backend.CallResourceRequest, sender backend.CallResourceResponseSender) error {
 
-	cmd := &actions.ActionCommand{}
-	if err := json.Unmarshal(req.Body, cmd); err != nil {
-		return err
-	}
+	// cmd := &actions.ActionCommand{}
+	// if err := json.Unmarshal(req.Body, cmd); err != nil {
+	// 	return err
+	// }
 
-	for _, action := range cmd.Write {
-		if action.Path == "stream.start" {
-			backend.Logger.Info("START!!!")
-			ds.streamer.Start()
-		} else if action.Path == "stream.stop" {
-			backend.Logger.Info("STOP!!!")
-			ds.streamer.Stop()
-		} else {
-			backend.Logger.Info("???????????????")
-		}
-	}
+	// for _, action := range cmd.Write {
+	// 	if action.Path == "stream.start" {
+	// 		backend.Logger.Info("START!!!")
+	// 		ds.streamer.Start()
+	// 	} else if action.Path == "stream.stop" {
+	// 		backend.Logger.Info("STOP!!!")
+	// 		ds.streamer.Stop()
+	// 	} else {
+	// 		backend.Logger.Info("???????????????")
+	// 	}
+	// }
 	return sender.Send(&backend.CallResourceResponse{
 		Status: http.StatusOK,
 		Body:   []byte("OK"),
@@ -52,9 +82,17 @@ func (ds *Datasource) CallResource(ctx context.Context, req *backend.CallResourc
 }
 
 func (ds *Datasource) HealthCheck(ctx context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
+	streamCount := 0
+	fieldCount := 0
+
+	for _, s := range ds.streams {
+		streamCount++
+		fieldCount += len(s.frame.Fields)
+	}
+
 	return &backend.CheckHealthResult{
 		Status:  backend.HealthStatusOk,
-		Message: "OK",
+		Message: fmt.Sprintf("OK (%d streams, %d fields)", streamCount, fieldCount),
 	}, nil
 }
 
@@ -78,8 +116,8 @@ func (ds *Datasource) doQuery(ctx context.Context, query *models.SignalQuery) ba
 	switch query.QueryType {
 	case models.QueryTypeAWG:
 		return ds.doAWG(ctx, query)
-		// case models.QueryTypeEasings:
-		// 	return ds.doEasing(ctx, query)
+	case models.QueryStreams:
+		return ds.doStream(ctx, query)
 	}
 	return backend.DataResponse{
 		Error: fmt.Errorf("unsupported query: %s", query.QueryType),
@@ -135,5 +173,29 @@ func (ds *Datasource) doAWG(ctx context.Context, query *models.SignalQuery) (dr 
 	frame, err := waves.DoSignalQuery(query)
 	dr.Frames = data.Frames{frame}
 	dr.Error = err
+	return
+}
+
+func (ds *Datasource) doStream(ctx context.Context, query *models.SignalQuery) (dr backend.DataResponse) {
+
+	if len(query.Stream) > 1 {
+		s, ok := ds.streams[query.Stream]
+		if !ok {
+			dr.Error = fmt.Errorf("unknown stream: %s", query.Stream)
+			return
+		}
+
+		frames, err := s.Frames()
+		dr.Frames = frames
+		dr.Error = err
+		return
+	}
+
+	for _, s := range ds.streams {
+		f, _ := s.Frames()
+		if f != nil {
+			dr.Frames = append(dr.Frames, f...)
+		}
+	}
 	return
 }

@@ -2,6 +2,7 @@ package models
 
 import (
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
@@ -11,6 +12,7 @@ import (
 const (
 	QueryTypeAWG     = "AWG"
 	QueryTypeEasings = "easing"
+	QueryStreams     = "streams"
 )
 
 // x = 0-2π
@@ -24,6 +26,10 @@ type BaseSignalField struct {
 
 	// Not set in json
 	DataType data.FieldType `json:"-"`
+}
+
+func (b *BaseSignalField) SetValue(v string) error {
+	return fmt.Errorf("unimplemented")
 }
 
 type ExpressionConfig struct {
@@ -59,6 +65,7 @@ type SignalConfig struct {
 
 type SignalQuery struct {
 	Signal SignalConfig `json:"signal,omitempty"` // all components get added together
+	Stream string       `json:"stream,omitempty"` // used for streams
 
 	// These are added from the base query
 	Interval      time.Duration     `json:"-"`

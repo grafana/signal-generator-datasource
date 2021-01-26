@@ -2,6 +2,7 @@ package plugin
 
 import (
 	"encoding/json"
+	"fmt"
 	"math"
 	"time"
 
@@ -46,9 +47,13 @@ func NewSignalStreamer(extcfg *tags.CaptureSetConfig, client *live.GrafanaLiveCl
 			// TODO... configure the time period
 			continue
 		}
-		name := tag.Path
-		if len(tag.Config.DisplayName) > 0 {
-			name = tag.Config.DisplayName
+		name := tag.Name
+		if len(name) < 1 {
+			name = tag.Path
+		}
+
+		if len(name) < 1 {
+			return nil, fmt.Errorf("invalid field name for tag: %v", tag)
 		}
 
 		cfg.Fields = append(cfg.Fields, models.ExpressionConfig{
@@ -57,7 +62,7 @@ func NewSignalStreamer(extcfg *tags.CaptureSetConfig, client *live.GrafanaLiveCl
 				Config: &tag.Config,
 				Labels: tag.Labels,
 			},
-			Expr: tag.Path,
+			Expr: fmt.Sprintf("%v", tag.Value),
 		})
 	}
 
@@ -169,6 +174,42 @@ func (s *SignalStreamer) Start() {
 
 	go s.doStream()
 	//s.doStream()
+}
+
+func (s *SignalStreamer) UpdateValues(props map[string]interface{}) error {
+	err := s.signal.UpdateValues(props)
+	if err != nil {
+		return err
+	}
+
+	paramCount := len(s.signal.Fields) + 4
+	parameters := make(map[string]interface{}, paramCount)
+	parameters["PI"] = math.Pi
+
+	t := time.Now()
+	s.frame.Fields[0].Set(0, t)
+	s.current.Time = t.UnixNano() / int64(time.Millisecond)
+
+	// Set the time
+	for _, i := range s.signal.Inputs {
+		err := i.UpdateEnv(&t, parameters)
+		if err != nil {
+			backend.Logger.Warn("ERROR updating time", "error", err)
+		}
+	}
+
+	// Calculate each value
+	for idx, f := range s.signal.Fields {
+		v, err := f.GetValue(parameters)
+		if err != nil {
+			v = nil
+		}
+		name := f.GetConfig().Name
+		parameters[name] = v
+		s.current.Values[name] = v
+		s.frame.Fields[idx+1].Set(0, v)
+	}
+	return nil
 }
 
 func (s *SignalStreamer) doStream() {

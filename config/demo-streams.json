@@ -1,15 +1,62 @@
 {
-  "name": "sine-waves",
+  "name": "stream",
   "interval": "100ms",
   "tags": [
     {
-      "path": "Sine(x + .2) * 0.2"
+      "name": "offset",
+      "value": "4"
     },
     {
-      "path": "Sine(x + .3) * 0.3"
+      "name": "scale",
+      "value": "4"
     },
     {
-      "path": "Sine(x + .4) * 0.4"
-    }
+      "name": "calc",
+      "value": "Sine(x + off) * scale"
+    },
+    {
+      "path": "EMS_PX_PLC.maincontrol.busGenOper_bESSOn",
+      "value": 0,
+			"label": {
+				"EMS": "PX"
+			},
+			"config": {
+				"description": "turn on/off system. write 1 to turn on the system and write 0 to turn off the system",
+				"writeable": true
+			}
+		},
+		{
+			"path": "EMS_PX_PLC.maincontrol.busGenOper_u16SetOperation",
+      "value": 0,
+			"label": {
+				"EMS": "PX"
+			},
+			"config": {
+				"description": "write 1 to Run,2 to go to Standby,3 to go to Sleep",
+				"writeable": true
+			}
+		},
+		{
+			"path": "EMS_PX_PLC.maincontrol.busGenOper_i32ModeSelectionWay",
+      "value": 0,
+			"label": {
+				"EMS": "PX"
+			},
+			"config": {
+				"description": "write 1 to Ad hoc,2 to follow Schedule",
+				"writeable": true
+			}
+		},
+		{
+			"path": "EMS_PX_PLC.maincontrol.busGenOper_u16StartupMode",
+      "value": 0,
+			"label": {
+				"EMS": "PX"
+			},
+			"config": {
+				"description": "0-Auto Start 1-Grid Start 2-Island Start",
+				"writeable": true
+			}
+		}
   ]
 }

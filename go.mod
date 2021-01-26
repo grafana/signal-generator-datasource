@@ -2,6 +2,8 @@ module github.com/grafana/signal-generator-datasource
 
 go 1.14
 
+replace github.com/grafana/grafana-edge-app => ../grafana-edge-app
+
 require (
 	github.com/Knetic/govaluate v3.0.0+incompatible
 	github.com/grafana/grafana-edge-app v0.0.0-20210121054608-7902bfcb2ff6

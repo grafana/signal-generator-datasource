@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/grafana/grafana-edge-app/pkg/actions"
 	"github.com/grafana/grafana-edge-app/pkg/tags"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
@@ -51,9 +52,42 @@ func NewDatasource(settings *models.DatasurceSettings) *Datasource {
 		settings: settings,
 		live:     client,
 		streams:  streams,
-		// streamer: &SignalStreamer{
-		// 	speedMillis: 50, // 20hz
-		// },
+	}
+}
+
+func (ds *Datasource) ExecuteAction(ctx context.Context, cmd actions.ActionCommand) actions.ActionResponse {
+	s, ok := ds.streams[cmd.Path]
+	if !ok {
+		keys := make([]string, 0, len(ds.streams))
+		for k := range ds.streams {
+			keys = append(keys, k)
+		}
+
+		return actions.ActionResponse{
+			Code:  http.StatusBadRequest,
+			Error: fmt.Sprintf("stream not found in: %v", keys),
+		}
+	}
+
+	vmap, ok := cmd.Value.(map[string]interface{})
+	if !ok {
+		return actions.ActionResponse{
+			Code:  http.StatusBadRequest,
+			Error: "value must be a map",
+		}
+	}
+
+	err := s.UpdateValues(vmap)
+	if err != nil {
+		return actions.ActionResponse{
+			Code:  http.StatusBadRequest,
+			Error: err.Error(),
+		}
+	}
+
+	return actions.ActionResponse{
+		Code:  http.StatusOK,
+		State: s.current,
 	}
 }
 
@@ -75,6 +109,11 @@ func (ds *Datasource) CallResource(ctx context.Context, req *backend.CallResourc
 	// 		backend.Logger.Info("???????????????")
 	// 	}
 	// }
+
+	if req.Path == "action" {
+		return actions.DoActionCommand(ctx, req, ds, sender)
+	}
+
 	return sender.Send(&backend.CallResourceResponse{
 		Status: http.StatusOK,
 		Body:   []byte("OK"),

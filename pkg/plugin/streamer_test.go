@@ -9,7 +9,7 @@ import (
 )
 
 func TestStream(t *testing.T) {
-	t.Skip()
+	// t.Skip()
 
 	client, err := live.InitGrafanaLiveClient(live.ConnectionInfo{
 		URL: "http://localhost:3000",
@@ -22,6 +22,7 @@ func TestStream(t *testing.T) {
 
 	s, err := NewSignalStreamer(cfg, client)
 	assert.NoError(t, err, "error loading streamer")
+	assert.Equal(t, 3, len(s.signal.Fields), "field length")
 
 	s.Start()
 }

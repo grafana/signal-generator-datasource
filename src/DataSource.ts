@@ -6,12 +6,12 @@ import {
   LiveChannelAddress,
   LiveChannelScope,
 } from '@grafana/data';
-import { DataSourceWithBackend, getLiveMeasurementsObserver } from '@grafana/runtime';
+import { DataSourceWithBackend, getGrafanaLiveSrv, getLiveMeasurementsObserver } from '@grafana/runtime';
 
 import { SignalQuery, SignalDatasourceOptions, QueryType, SignalCustomMeta } from './types';
 
 import { Observable, of } from 'rxjs';
-import { switchMap } from 'rxjs/operators';
+import { switchMap, first } from 'rxjs/operators';
 
 export class DataSource extends DataSourceWithBackend<SignalQuery, SignalDatasourceOptions> {
   constructor(instanceSettings: DataSourceInstanceSettings<SignalDatasourceOptions>) {
@@ -35,7 +35,15 @@ export class DataSource extends DataSourceWithBackend<SignalQuery, SignalDatasou
                 namespace: 'measurements',
                 path: meta.streamKey,
               };
-              console.log('streaming from:', addr);
+              const v = getGrafanaLiveSrv().getChannel(addr);
+              v.getStream()
+                .pipe(first())
+                .subscribe((v) => {
+                  console.log('XXXX', v);
+                });
+
+              console.log('streaming from:', addr, v);
+
               return getLiveMeasurementsObserver(addr, request.requestId);
             }
           }

@@ -17,6 +17,7 @@ type SignalEnv = map[string]interface{}
 type SignalField interface {
 	GetConfig() *models.ExpressionConfig
 	GetValue(env map[string]interface{}) (interface{}, error)
+	SetValue(val interface{}) error
 }
 
 type InputField interface {
@@ -36,6 +37,18 @@ func (f *signalFieldWithEval) GetConfig() *models.ExpressionConfig {
 
 func (f *signalFieldWithEval) GetValue(env map[string]interface{}) (interface{}, error) {
 	return f.expr.Evaluate(env)
+}
+
+func (f *signalFieldWithEval) SetValue(val interface{}) error {
+	expr := fmt.Sprintf("%v", val)
+	ex, err := govaluate.NewEvaluableExpressionWithFunctions(expr, WaveformFunctions)
+	if err != nil {
+		return err
+	}
+
+	f.config.Expr = expr
+	f.expr = ex
+	return nil
 }
 
 func NewEvalSignalField(config *models.ExpressionConfig) (SignalField, error) {
@@ -147,6 +160,32 @@ func NewTimeInputField(config *models.TimeFieldConfig) (InputField, error) {
 type SignalGen struct {
 	Inputs []InputField
 	Fields []SignalField
+}
+
+func (s *SignalGen) UpdateValues(props map[string]interface{}) error {
+	byName := make(map[string]int)
+	for idx, f := range s.Fields {
+		byName[f.GetConfig().Name] = idx
+	}
+
+	// First update values
+	for k := range props {
+		_, ok := byName[k]
+		if !ok {
+			return fmt.Errorf("can not find field: " + k)
+		}
+	}
+
+	// Now update
+	for k, v := range props {
+		idx := byName[k]
+		err := s.Fields[idx].SetValue(v)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func NewSignalGenerator(args models.SignalConfig) (*SignalGen, error) {

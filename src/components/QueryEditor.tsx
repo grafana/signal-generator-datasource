@@ -1,6 +1,6 @@
 import React, { PureComponent } from 'react';
 import { QueryEditorProps, SelectableValue } from '@grafana/data';
-import { Select, InlineField } from '@grafana/ui';
+import { Select, InlineField, InlineSwitch, InlineFieldRow } from '@grafana/ui';
 import { DataSource } from '../DataSource';
 import { SignalQuery, SignalDatasourceOptions, QueryType, SignalField, TimeFieldConfig } from '../types';
 import { defaultSignal } from '../info';
@@ -76,7 +76,22 @@ export class QueryEditor extends PureComponent<Props> {
     onRunQuery();
   };
 
+  onToggleOneshot = () => {
+    const { onChange, query, onRunQuery } = this.props;
+    onChange({ ...query, oneshot: !query.oneshot });
+    onRunQuery();
+  };
+
   renderQuery(query: SignalQuery) {
+    if (query.queryType === QueryType.Streams) {
+      return (
+        <InlineFieldRow>
+          <InlineField label="Oneshot" labelWidth={14}>
+            <InlineSwitch css="" onChange={this.onToggleOneshot} name="levelColumn" value={!!query.oneshot} />
+          </InlineField>
+        </InlineFieldRow>
+      );
+    }
     if (query.queryType !== QueryType.AWG) {
       return <div>TODO: not implemented yet: ${query.queryType}</div>;
     }

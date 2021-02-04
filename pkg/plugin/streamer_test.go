@@ -22,7 +22,7 @@ func TestStream(t *testing.T) {
 
 	s, err := NewSignalStreamer(cfg, client)
 	assert.NoError(t, err, "error loading streamer")
-	assert.Equal(t, 3, len(s.signal.Fields), "field length")
+	assert.Equal(t, 7, len(s.signal.Fields), "field length")
 
 	s.Start()
 }

@@ -6,12 +6,12 @@ import {
   LiveChannelAddress,
   LiveChannelScope,
 } from '@grafana/data';
-import { DataSourceWithBackend, getGrafanaLiveSrv, getLiveMeasurementsObserver } from '@grafana/runtime';
+import { DataSourceWithBackend, getLiveMeasurementsObserver } from '@grafana/runtime';
 
 import { SignalQuery, SignalDatasourceOptions, QueryType, SignalCustomMeta } from './types';
 
 import { Observable, of } from 'rxjs';
-import { switchMap, first } from 'rxjs/operators';
+import { switchMap } from 'rxjs/operators';
 
 export class DataSource extends DataSourceWithBackend<SignalQuery, SignalDatasourceOptions> {
   constructor(instanceSettings: DataSourceInstanceSettings<SignalDatasourceOptions>) {
@@ -20,7 +20,7 @@ export class DataSource extends DataSourceWithBackend<SignalQuery, SignalDatasou
 
   query(request: DataQueryRequest<SignalQuery>): Observable<DataQueryResponse> {
     const streamQuery = request.targets.find((q) => q.queryType === QueryType.Streams);
-    if (streamQuery) {
+    if (streamQuery && !streamQuery.oneshot) {
       if (request.targets.length > 1) {
         throw new Error('stream can only support one stream query at once');
       }
@@ -35,14 +35,8 @@ export class DataSource extends DataSourceWithBackend<SignalQuery, SignalDatasou
                 namespace: 'measurements',
                 path: meta.streamKey,
               };
-              const v = getGrafanaLiveSrv().getChannel(addr);
-              v.getStream()
-                .pipe(first())
-                .subscribe((v) => {
-                  console.log('XXXX', v);
-                });
 
-              console.log('streaming from:', addr, v);
+              console.log('streaming from:', addr, frame.fields);
 
               return getLiveMeasurementsObserver(addr, request.requestId);
             }

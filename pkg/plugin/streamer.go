@@ -173,7 +173,7 @@ func (s *SignalStreamer) Start() {
 	}
 
 	go s.doStream()
-	//s.doStream()
+	// s.doStream()
 }
 
 func (s *SignalStreamer) UpdateValues(props map[string]interface{}) error {
@@ -202,11 +202,12 @@ func (s *SignalStreamer) UpdateValues(props map[string]interface{}) error {
 	for idx, f := range s.signal.Fields {
 		v, err := f.GetValue(parameters)
 		if err != nil {
-			v = nil
+			v = float64(0)
 		}
 		name := f.GetConfig().Name
 		parameters[name] = v
 		s.current.Values[name] = v
+
 		s.frame.Fields[idx+1].Set(0, v)
 	}
 	return nil
@@ -247,11 +248,12 @@ func (s *SignalStreamer) doStream() {
 		for idx, f := range s.signal.Fields {
 			v, err := f.GetValue(parameters)
 			if err != nil {
-				v = nil
+				v = float64(0) // TODO!!!! better error support!!!
 			}
 			name := f.GetConfig().Name
 			parameters[name] = v
 			s.current.Values[name] = v
+
 			s.frame.Fields[idx+1].Set(0, v)
 		}
 

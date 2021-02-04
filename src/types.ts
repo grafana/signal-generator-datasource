@@ -48,6 +48,7 @@ export interface SignalCustomMeta {
 export interface SignalQuery extends DataQuery {
   queryType?: QueryType;
   signal?: SignalConfig;
+  oneshot?: boolean;
 }
 
 export interface SignalDatasourceOptions extends DataSourceJsonData {

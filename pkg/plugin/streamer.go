@@ -42,7 +42,8 @@ func NewSignalStreamer(extcfg *tags.CaptureSetConfig, client *live.GrafanaLiveCl
 		}
 	}
 
-	for _, tag := range extcfg.Tags {
+	for idx := range extcfg.Tags {
+		tag := extcfg.Tags[idx]
 		if tag.Path == "time" {
 			// TODO... configure the time period
 			continue
@@ -54,6 +55,10 @@ func NewSignalStreamer(extcfg *tags.CaptureSetConfig, client *live.GrafanaLiveCl
 
 		if len(name) < 1 {
 			return nil, fmt.Errorf("invalid field name for tag: %v", tag)
+		}
+
+		if len(tag.Path) > 1 {
+			tag.Config.Path = tag.Path
 		}
 
 		cfg.Fields = append(cfg.Fields, models.ExpressionConfig{

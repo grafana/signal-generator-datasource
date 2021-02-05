@@ -1,6 +1,6 @@
 {
   "name":"stream",
-  "interval":"100ms",
+  "interval":"250ms",
   "tags":[
     {
       "name":"offset",
@@ -23,11 +23,9 @@
       "value":"Sine(x + offset) * scale"
     },
     {
+      "name": "Main control",
       "path":"EMS_PX_PLC.maincontrol.busGenOper_bESSOn",
       "value":0,
-      "label":{
-        "EMS":"PX"
-      },
       "config":{
         "description":"turn on/off system. write 1 to turn on the system and write 0 to turn off the system",
         "writeable":true,
@@ -39,6 +37,48 @@
           {
             "text":"ON",
             "value":"1"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Operation",
+      "path":"EMS_PX_PLC.maincontrol.busGenOper_u16SetOperation",
+      "value":1,
+      "config":{
+        "description": "write 1 to Run,2 to go to Standby,3 to go to Sleep",
+        "writeable":true,
+        "mappings":[
+          {
+            "text":"Run",
+            "value":"1"
+          },
+          {
+            "text":"Standby",
+            "value":"2"
+          },
+          {
+            "text":"Sleep",
+            "value":"3"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Mode selection",
+      "path":"EMS_PX_PLC.maincontrol.busGenOper_i32ModeSelectionWay",
+      "value":1,
+      "config":{
+        "description": "write 1 to Ad hoc,2 to follow Schedule",
+        "writeable":true,
+        "mappings":[
+          {
+            "text":"Ad hoc",
+            "value":"1"
+          },
+          {
+            "text":"Schedule",
+            "value":"2"
           }
         ]
       }

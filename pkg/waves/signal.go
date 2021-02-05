@@ -165,14 +165,18 @@ type SignalGen struct {
 func (s *SignalGen) UpdateValues(props map[string]interface{}) error {
 	byName := make(map[string]int)
 	for idx, f := range s.Fields {
-		byName[f.GetConfig().Name] = idx
+		cfg := f.GetConfig()
+		byName[cfg.Name] = idx
+		if len(cfg.Config.Path) > 0 {
+			byName[cfg.Config.Path] = idx
+		}
 	}
 
 	// First update values
 	for k := range props {
 		_, ok := byName[k]
 		if !ok {
-			return fmt.Errorf("can not find field: " + k)
+			return fmt.Errorf("can not find field: '%s' // %v", k, byName)
 		}
 	}
 

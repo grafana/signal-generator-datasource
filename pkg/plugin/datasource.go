@@ -65,7 +65,7 @@ func (ds *Datasource) ExecuteAction(ctx context.Context, cmd actions.ActionComma
 
 		return actions.ActionResponse{
 			Code:  http.StatusBadRequest,
-			Error: fmt.Sprintf("stream not found in: %v", keys),
+			Error: fmt.Sprintf("'%s' not found in: %v", cmd.Path, keys),
 		}
 	}
 

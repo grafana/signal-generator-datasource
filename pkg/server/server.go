@@ -107,6 +107,7 @@ func handlerFlight(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for _, msg := range collector.msgs {
+		fmt.Fprintf(w, "[%+v] APP: %d, HEAD: %d, BODY: %d\n", msg.FlightDescriptor, (msg.AppMetadata), len(msg.DataHeader), len(msg.DataBody))
 		fmt.Fprintf(w, "%s\n\n\n", msg.String())
 	}
 

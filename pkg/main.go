@@ -7,12 +7,10 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/datasource"
 	"github.com/grafana/signal-generator-datasource/pkg/plugin"
-	"github.com/grafana/signal-generator-datasource/pkg/server"
 )
 
 type args struct {
 	server *bool
-	format *string
 }
 
 func main() {
@@ -22,7 +20,7 @@ func main() {
 	flag.Parse()
 
 	if *args.server {
-		server.RunServer()
+		// server.RunServer()
 		os.Exit(0)
 	}
 

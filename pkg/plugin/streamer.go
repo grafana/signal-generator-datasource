@@ -223,7 +223,7 @@ func (s *SignalStreamer) doStream() {
 	ticker := time.NewTicker(time.Duration(s.speedMillis) * time.Millisecond)
 
 	msg := measurement.Batch{
-		Measurements: []measurement.Measurement{s.current}, // always a single measurement
+		Measurements: make([]measurement.Measurement, 1), // always a single measurement
 	}
 
 	paramCount := len(s.signal.Fields) + 4
@@ -234,7 +234,7 @@ func (s *SignalStreamer) doStream() {
 
 	for t := range ticker.C {
 		if !s.running {
-			backend.Logger.Info("stoppint!!!")
+			backend.Logger.Info("stopping!!!")
 			return
 		}
 
@@ -261,6 +261,8 @@ func (s *SignalStreamer) doStream() {
 
 			s.frame.Fields[idx+1].Set(0, v)
 		}
+
+		msg.Measurements[0] = s.current
 
 		bytes, err := json.Marshal(&msg)
 		if err != nil {

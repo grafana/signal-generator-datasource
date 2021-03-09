@@ -6,7 +6,7 @@ import (
 	"math"
 	"time"
 
-	"github.com/grafana/grafana-edge-app/pkg/tags"
+	"github.com/grafana/grafana-edge-app/pkg/capture"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/grafana/grafana-plugin-sdk-go/live"
@@ -26,7 +26,7 @@ type SignalStreamer struct {
 	frame       *data.Frame
 }
 
-func NewSignalStreamer(extcfg *tags.CaptureSetConfig, client *live.GrafanaLiveClient) (*SignalStreamer, error) {
+func NewSignalStreamer(extcfg *capture.CaptureSetConfig, client *live.GrafanaLiveClient) (*SignalStreamer, error) {
 	cfg := models.SignalConfig{
 		Time: models.TimeFieldConfig{
 			Period: "5s",
@@ -42,8 +42,8 @@ func NewSignalStreamer(extcfg *tags.CaptureSetConfig, client *live.GrafanaLiveCl
 		}
 	}
 
-	for idx := range extcfg.Tags {
-		tag := extcfg.Tags[idx]
+	for idx := range extcfg.Input {
+		tag := extcfg.Input[idx]
 		if tag.Path == "time" {
 			// TODO... configure the time period
 			continue
@@ -59,6 +59,10 @@ func NewSignalStreamer(extcfg *tags.CaptureSetConfig, client *live.GrafanaLiveCl
 
 		if len(tag.Path) > 1 {
 			tag.Config.Path = tag.Path
+		}
+
+		if tag.Value == nil || tag.Value == "" {
+			return nil, fmt.Errorf("missing value for field: %s", tag.Path)
 		}
 
 		cfg.Fields = append(cfg.Fields, models.ExpressionConfig{

@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/grafana/grafana-edge-app/pkg/tags"
+	"github.com/grafana/grafana-edge-app/pkg/capture"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental"
 	"github.com/grafana/grafana-plugin-sdk-go/live"
@@ -12,7 +12,7 @@ import (
 )
 
 func TestStream(t *testing.T) {
-	t.Skip()
+	//t.Skip()
 
 	client, err := live.InitGrafanaLiveClient(live.ConnectionInfo{
 		URL: "http://localhost:3000",
@@ -20,7 +20,7 @@ func TestStream(t *testing.T) {
 	assert.NoError(t, err, "error loading live server")
 
 	// Initalize streams
-	cfg, err := tags.LoadCaptureSetConfig("../../config/demo-streams.json")
+	cfg, err := capture.LoadCaptureSetConfig("../../config/demo-streams.json")
 	assert.NoError(t, err, "error loading cfg")
 
 	s, err := NewSignalStreamer(cfg, client)

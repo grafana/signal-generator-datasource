@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/grafana/grafana-edge-app/pkg/actions"
-	"github.com/grafana/grafana-edge-app/pkg/tags"
+	"github.com/grafana/grafana-edge-app/pkg/capture"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/grafana/grafana-plugin-sdk-go/live"
@@ -33,11 +33,9 @@ func NewDatasource(settings *models.DatasurceSettings) *Datasource {
 			continue
 		}
 
-		cfg, err := tags.LoadCaptureSetConfig(path)
+		cfg, err := capture.LoadCaptureSetConfig(path)
 		if err != nil {
 			backend.Logger.Error("error loading config", "err", err, "path", path)
-		} else if len(cfg.Flags) > 0 {
-			backend.Logger.Error("flags not supported", "path", path)
 		} else {
 			stream, err := NewSignalStreamer(cfg, client)
 			if err != nil {

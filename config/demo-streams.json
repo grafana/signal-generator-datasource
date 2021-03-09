@@ -1,10 +1,11 @@
 {
   "name":"stream",
-  "interval":"20ms",
-  "tags":[
+  "interval":"50ms",
+  "input":[
     {
       "name":"offset",
       "value":"4",
+      "type": "float64",
       "config":{
         "description":"sine wave offset",
         "writeable":true
@@ -13,6 +14,7 @@
     {
       "name":"scale",
       "value":"5",
+      "type": "float64",
       "config":{
         "description":"sine wave scale factor",
         "writeable":true
@@ -20,12 +22,14 @@
     },
     {
       "name":"calc",
+      "type": "float64",
       "value":"Sine(x + offset) * scale"
     },
     {
       "name": "Main control",
       "path":"EMS_PX_PLC.maincontrol.busGenOper_bESSOn",
-      "value":0,
+      "type": "bool",
+      "value": "0",
       "config":{
         "description":"turn on/off system. write 1 to turn on the system and write 0 to turn off the system",
         "writeable":true,
@@ -44,7 +48,8 @@
     {
       "name": "Operation",
       "path":"EMS_PX_PLC.maincontrol.busGenOper_u16SetOperation",
-      "value":1,
+      "type": "uint16",
+      "value": "1",
       "config":{
         "description": "write 1 to Run,2 to go to Standby,3 to go to Sleep",
         "writeable":true,
@@ -67,7 +72,8 @@
     {
       "name": "Mode selection",
       "path":"EMS_PX_PLC.maincontrol.busGenOper_i32ModeSelectionWay",
-      "value":1,
+      "type": "int32",
+      "value": "1",
       "config":{
         "description": "write 1 to Ad hoc,2 to follow Schedule",
         "writeable":true,
@@ -80,6 +86,24 @@
             "text":"Schedule",
             "value":"2"
           }
+        ]
+      }
+    },
+    {
+      "name": "ESS Alarms",
+      "path":"busInfo_busAlarm_i32ESSAlarm",
+      "type": "int32",
+      "value": "0",
+      "config":{
+        "description": "All the alarms",
+        "writeable":true
+      },
+      "bits": {
+        "address": [
+          { "index": 0, "name": "BMS fault" },
+          { "index": 1, "name": "PCS fault" },
+          { "index": 2, "name": "GDX fault" },
+          { "index": 3, "name": "AUX fault" }
         ]
       }
     }

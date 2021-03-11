@@ -65,13 +65,19 @@ func NewSignalStreamer(extcfg *capture.CaptureSetConfig, client *live.GrafanaLiv
 			return nil, fmt.Errorf("missing value for field: %s", tag.Path)
 		}
 
+		ft := data.FieldTypeFloat64
+		if tag.FieldType != nil {
+			ft = *tag.FieldType
+		}
+
 		cfg.Fields = append(cfg.Fields, models.ExpressionConfig{
 			BaseSignalField: models.BaseSignalField{
 				Name:   name,
 				Config: &tag.Config,
 				Labels: tag.Labels,
 			},
-			Expr: fmt.Sprintf("%v", tag.Value),
+			Expr:     fmt.Sprintf("%v", tag.Value),
+			DataType: ft,
 		})
 	}
 

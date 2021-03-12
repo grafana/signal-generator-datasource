@@ -1,6 +1,7 @@
 package plugin
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"math"
@@ -114,76 +115,9 @@ func NewSignalStreamer(extcfg *capture.CaptureSetConfig, client *live.GrafanaLiv
 	}, nil
 }
 
-func (s *SignalStreamer) Stop() {
-	s.running = false
-}
+func (s *SignalStreamer) Stop() {}
 
-func (s *SignalStreamer) Start() {
-	if s.running {
-		backend.Logger.Info("already running")
-		return
-	}
-
-	// if s.signal == nil {
-	// 	cfg := models.SignalConfig{
-	// 		Time: models.TimeFieldConfig{
-	// 			Period: "5s",
-	// 		},
-	// 		Fields: []models.ExpressionConfig{},
-	// 	}
-	// 	// cfg.Fields = append(cfg.Fields, models.ExpressionConfig{
-	// 	// 	BaseSignalField: models.BaseSignalField{
-	// 	// 		Name: "A",
-	// 	// 	},
-	// 	// 	Expr: "Sine(x)",
-	// 	// })
-	// 	// cfg.Fields = append(cfg.Fields, models.ExpressionConfig{
-	// 	// 	BaseSignalField: models.BaseSignalField{
-	// 	// 		Name: "B",
-	// 	// 	},
-	// 	// 	Expr: "Sine(x+1.5) * 2 + Noise() * 0.4", // + Noise()*.5",
-	// 	// })
-	// 	// cfg.Fields = append(cfg.Fields, models.ExpressionConfig{
-	// 	// 	BaseSignalField: models.BaseSignalField{
-	// 	// 		Name: "C",
-	// 	// 	},
-	// 	// 	Expr: "Sine(x+1.5)*2",
-	// 	// })
-
-	// 	for i := 1; i < 5; i++ {
-	// 		off := float64(i) * 0.1
-
-	// 		cfg.Fields = append(cfg.Fields, models.ExpressionConfig{
-	// 			BaseSignalField: models.BaseSignalField{
-	// 				Name: fmt.Sprintf("Q%d", i),
-	// 			},
-	// 			Expr: fmt.Sprintf("Sine(x+%f) * %f", off*1.2, off*0.6), // + Noise()*.5",
-	// 		})
-	// 	}
-
-	// 	gen, _ := waves.NewSignalGenerator(cfg)
-	// 	if gen != nil {
-	// 		s.signal = gen
-	// 	}
-	// }
-
-	if s.channel == nil {
-		m := s.frame.Meta.Custom.(*models.CustomFrameMeta)
-
-		s.channel, _ = s.client.Subscribe(live.ChannelAddress{
-			Scope:     "grafana",
-			Namespace: "measurements",
-			Path:      m.StreamKey,
-		})
-	}
-
-	if s.speedMillis < 10 {
-		s.speedMillis = 2500 // every 2.5s
-	}
-
-	go s.doStream()
-	// s.doStream()
-}
+func (s *SignalStreamer) Start() {}
 
 func (s *SignalStreamer) UpdateValues(props map[string]interface{}) error {
 	err := s.signal.UpdateValues(props)
@@ -222,9 +156,9 @@ func (s *SignalStreamer) UpdateValues(props map[string]interface{}) error {
 	return nil
 }
 
-func (s *SignalStreamer) doStream() {
-	s.running = true
+func (s *SignalStreamer) doStream(ctx context.Context, sender backend.StreamPacketSender) {
 	ticker := time.NewTicker(time.Duration(s.speedMillis) * time.Millisecond)
+	defer ticker.Stop()
 
 	msg := measurement.Batch{
 		Measurements: make([]measurement.Measurement, 1), // always a single measurement
@@ -234,46 +168,53 @@ func (s *SignalStreamer) doStream() {
 	parameters := make(map[string]interface{}, paramCount)
 	parameters["PI"] = math.Pi
 
-	backend.Logger.Info("START STREAMING", "sig", s.signal)
+	backend.Logger.Info("start streaming")
 
-	for t := range ticker.C {
-		if !s.running {
-			backend.Logger.Info("stopping!!!")
+	for {
+		select {
+		case <-ctx.Done():
+			backend.Logger.Info("stop streaming (context canceled)")
 			return
-		}
+		case t := <-ticker.C:
+			s.frame.Fields[0].Set(0, t)
+			s.current.Time = t.UnixNano() / int64(time.Millisecond)
 
-		s.frame.Fields[0].Set(0, t)
-		s.current.Time = t.UnixNano() / int64(time.Millisecond)
+			// Set the time
+			for _, i := range s.signal.Inputs {
+				err := i.UpdateEnv(&t, parameters)
+				if err != nil {
+					backend.Logger.Warn("ERROR updating time", "error", err)
+				}
+			}
 
-		// Set the time
-		for _, i := range s.signal.Inputs {
-			err := i.UpdateEnv(&t, parameters)
+			// Calculate each value
+			for idx, f := range s.signal.Fields {
+				v, err := f.GetValue(parameters)
+				if err != nil {
+					v = float64(0) // TODO!!!! better error support!!!
+				}
+				name := f.GetConfig().Name
+				parameters[name] = v
+				s.current.Values[name] = v
+
+				s.frame.Fields[idx+1].Set(0, v)
+			}
+
+			msg.Measurements[0] = s.current
+
+			bytes, err := json.Marshal(&msg)
 			if err != nil {
-				backend.Logger.Warn("ERROR updating time", "error", err)
+				backend.Logger.Warn("unable to marshal line", "error", err)
+				continue
+			}
+			err = sender.Send(&backend.StreamPacket{
+				Payload: bytes,
+			})
+			if err != nil {
+				backend.Logger.Warn("unable to send data", "error", err)
+				continue
 			}
 		}
-
-		// Calculate each value
-		for idx, f := range s.signal.Fields {
-			v, err := f.GetValue(parameters)
-			if err != nil {
-				v = float64(0) // TODO!!!! better error support!!!
-			}
-			name := f.GetConfig().Name
-			parameters[name] = v
-			s.current.Values[name] = v
-
-			s.frame.Fields[idx+1].Set(0, v)
-		}
-
-		msg.Measurements[0] = s.current
-
-		bytes, err := json.Marshal(&msg)
-		if err != nil {
-			backend.Logger.Warn("unable to marshal line", "error", err)
-			continue
-		}
-		s.channel.Publish(bytes)
 	}
 }
 

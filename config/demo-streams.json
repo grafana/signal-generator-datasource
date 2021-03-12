@@ -1,6 +1,6 @@
 {
   "name":"stream",
-  "interval":"50ms",
+  "interval":"200ms",
   "input":[
     {
       "name":"offset",

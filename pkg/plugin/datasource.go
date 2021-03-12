@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"sync"
 
 	"github.com/grafana/grafana-edge-app/pkg/actions"
 	"github.com/grafana/grafana-edge-app/pkg/capture"
@@ -25,7 +26,7 @@ func NewDatasource(settings *models.DatasurceSettings) *Datasource {
 		URL: settings.LiveURL,
 	})
 
-	// Initalize streams
+	// Initialize streams
 	streams := make(map[string]*SignalStreamer)
 	for _, path := range settings.Capture {
 		if client == nil {
@@ -126,6 +127,8 @@ func (ds *Datasource) HealthCheck(ctx context.Context, req *backend.CheckHealthR
 		streamCount++
 		fieldCount += len(s.frame.Fields)
 	}
+
+	backend.Logger.Error("datasource ID", "id", req.PluginContext.DataSourceInstanceSettings.ID)
 
 	return &backend.CheckHealthResult{
 		Status:  backend.HealthStatusOk,
@@ -235,4 +238,23 @@ func (ds *Datasource) doStream(ctx context.Context, query *models.SignalQuery) (
 		}
 	}
 	return
+}
+
+func (ds *Datasource) CanSubscribeToStream(_ context.Context, _ *backend.SubscribeToStreamRequest) (*backend.SubscribeToStreamResponse, error) {
+	return &backend.SubscribeToStreamResponse{
+		OK: true,
+	}, nil
+}
+
+func (ds *Datasource) RunStream(ctx context.Context, _ *backend.RunStreamRequest, sender backend.StreamPacketSender) error {
+	var wg sync.WaitGroup
+	for _, stream := range ds.streams {
+		wg.Add(1)
+		go func(stream *SignalStreamer) {
+			defer wg.Done()
+			stream.doStream(ctx, sender)
+		}(stream)
+	}
+	wg.Wait()
+	return nil
 }

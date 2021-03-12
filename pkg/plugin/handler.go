@@ -28,6 +28,7 @@ func GetDatasourceServeOpts() datasource.ServeOpts {
 		CheckHealthHandler:  handler,
 		QueryDataHandler:    handler,
 		CallResourceHandler: handler,
+		StreamHandler:       handler,
 	}
 }
 
@@ -90,4 +91,26 @@ func (cr *DatasourceHandler) CallResource(ctx context.Context, req *backend.Call
 		return ds.CallResource(ctx, req, sender)
 	}
 	return nil
+}
+
+func (cr *DatasourceHandler) CanSubscribeToStream(ctx context.Context, req *backend.SubscribeToStreamRequest) (*backend.SubscribeToStreamResponse, error) {
+	h, err := cr.im.Get(req.PluginContext)
+	if err != nil {
+		return nil, err
+	}
+	if ds, ok := h.(*Datasource); ok {
+		return ds.CanSubscribeToStream(ctx, req)
+	}
+	return nil, dserrors.ErrorBadDatasource
+}
+
+func (cr *DatasourceHandler) RunStream(ctx context.Context, req *backend.RunStreamRequest, sender backend.StreamPacketSender) error {
+	h, err := cr.im.Get(req.PluginContext)
+	if err != nil {
+		return err
+	}
+	if ds, ok := h.(*Datasource); ok {
+		return ds.RunStream(ctx, req, sender)
+	}
+	return dserrors.ErrorBadDatasource
 }

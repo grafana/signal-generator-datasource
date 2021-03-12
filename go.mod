@@ -4,7 +4,7 @@ go 1.14
 
 // replace github.com/grafana/grafana-edge-app => ../grafana-edge-app
 
-// replace github.com/grafana/grafana-plugin-sdk-go => ../../more/grafana-plugin-sdk-go
+replace github.com/grafana/grafana-plugin-sdk-go => ../../grafana-plugin-sdk-go
 
 require (
 	github.com/Knetic/govaluate v3.0.1-0.20171022003610-9aa49832a739+incompatible

@@ -20,7 +20,7 @@ export class DataSource extends DataSourceWithBackend<SignalQuery, SignalDatasou
     super(instanceSettings);
 
     // Channels managed by this datasource instance
-    this.channelSupport = new LiveMeasurementsSupport()
+    this.channelSupport = new LiveMeasurementsSupport();
   }
 
   query(request: DataQueryRequest<SignalQuery>): Observable<DataQueryResponse> {
@@ -37,8 +37,8 @@ export class DataSource extends DataSourceWithBackend<SignalQuery, SignalDatasou
             const meta = frame.meta?.custom as SignalCustomMeta;
             if (meta?.streamKey) {
               const addr: LiveChannelAddress = {
-                scope: LiveChannelScope.Grafana,
-                namespace: 'measurements',
+                scope: LiveChannelScope.DataSource,
+                namespace: this.uid,
                 path: meta.streamKey,
               };
 

@@ -86,7 +86,7 @@ func (ds *Datasource) ExecuteAction(ctx context.Context, cmd actions.ActionComma
 
 	return actions.ActionResponse{
 		Code:  http.StatusOK,
-		State: s.current,
+		State: s.frame,
 	}
 }
 

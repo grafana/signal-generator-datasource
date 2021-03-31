@@ -197,7 +197,7 @@ func (s *SignalStreamer) doStream(ctx context.Context, sender backend.StreamPack
 				bytes, err = data.FrameToJSON(s.frame, true, false)
 				if err != nil {
 					backend.Logger.Warn("error wrting schema", "error", err)
-					continue // return?  kills tream?
+					continue // return?  kills stream?
 				}
 				first = false
 				packet.Header = bytes // the schema

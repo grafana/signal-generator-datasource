@@ -2,7 +2,6 @@ package plugin
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"math"
 	"time"
@@ -11,7 +10,6 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/grafana/grafana-plugin-sdk-go/live"
-	"github.com/grafana/grafana-plugin-sdk-go/measurement"
 	"github.com/grafana/signal-generator-datasource/pkg/models"
 	"github.com/grafana/signal-generator-datasource/pkg/waves"
 )
@@ -23,7 +21,6 @@ type SignalStreamer struct {
 	channel     *live.GrafanaLiveChannel
 	running     bool
 	speedMillis int64
-	current     measurement.Measurement
 	frame       *data.Frame
 }
 
@@ -100,16 +97,9 @@ func NewSignalStreamer(extcfg *capture.CaptureSetConfig, client *live.GrafanaLiv
 		},
 	})
 
-	m := measurement.Measurement{
-		Name:   extcfg.Name,
-		Time:   0,
-		Values: make(map[string]interface{}, 5),
-	}
-
 	return &SignalStreamer{
 		signal:      gen,
 		client:      client,
-		current:     m,
 		frame:       frame,
 		speedMillis: speedMillis,
 	}, nil
@@ -131,7 +121,6 @@ func (s *SignalStreamer) UpdateValues(props map[string]interface{}) error {
 
 	t := time.Now()
 	s.frame.Fields[0].Set(0, t)
-	s.current.Time = t.UnixNano() / int64(time.Millisecond)
 
 	// Set the time
 	for _, i := range s.signal.Inputs {
@@ -149,7 +138,6 @@ func (s *SignalStreamer) UpdateValues(props map[string]interface{}) error {
 		}
 		name := f.GetConfig().Name
 		parameters[name] = v
-		s.current.Values[name] = v
 
 		s.frame.Fields[idx+1].Set(0, v)
 	}
@@ -160,15 +148,13 @@ func (s *SignalStreamer) doStream(ctx context.Context, sender backend.StreamPack
 	ticker := time.NewTicker(time.Duration(s.speedMillis) * time.Millisecond)
 	defer ticker.Stop()
 
-	msg := measurement.Batch{
-		Measurements: make([]measurement.Measurement, 1), // always a single measurement
-	}
-
 	paramCount := len(s.signal.Fields) + 4
 	parameters := make(map[string]interface{}, paramCount)
 	parameters["PI"] = math.Pi
 
 	backend.Logger.Info("start streaming")
+
+	first := true
 
 	for {
 		select {
@@ -177,7 +163,6 @@ func (s *SignalStreamer) doStream(ctx context.Context, sender backend.StreamPack
 			return
 		case t := <-ticker.C:
 			s.frame.Fields[0].Set(0, t)
-			s.current.Time = t.UnixNano() / int64(time.Millisecond)
 
 			// Set the time
 			for _, i := range s.signal.Inputs {
@@ -195,21 +180,30 @@ func (s *SignalStreamer) doStream(ctx context.Context, sender backend.StreamPack
 				}
 				name := f.GetConfig().Name
 				parameters[name] = v
-				s.current.Values[name] = v
 
 				s.frame.Fields[idx+1].Set(0, v)
 			}
 
-			msg.Measurements[0] = s.current
-
-			bytes, err := json.Marshal(&msg)
+			bytes, err := data.FrameToJSON(s.frame, false, true)
 			if err != nil {
-				backend.Logger.Warn("unable to marshal line", "error", err)
-				continue
+				backend.Logger.Warn("error writing json data", "error", err)
+				continue // return?  kills tream?
 			}
-			err = sender.Send(&backend.StreamPacket{
+			packet := &backend.StreamPacket{
 				Payload: bytes,
-			})
+			}
+
+			if first {
+				bytes, err = data.FrameToJSON(s.frame, true, false)
+				if err != nil {
+					backend.Logger.Warn("error wrting schema", "error", err)
+					continue // return?  kills tream?
+				}
+				first = false
+				packet.Header = bytes // the schema
+			}
+
+			err = sender.Send(packet)
 			if err != nil {
 				backend.Logger.Warn("unable to send data", "error", err)
 				continue

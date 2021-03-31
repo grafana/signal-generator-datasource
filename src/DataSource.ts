@@ -13,10 +13,14 @@ import { SignalQuery, SignalDatasourceOptions, QueryType, SignalCustomMeta } fro
 
 import { Observable, of } from 'rxjs';
 import { switchMap, map } from 'rxjs/operators';
+import { LiveMeasurementsSupport } from 'support';
 
 export class DataSource extends DataSourceWithBackend<SignalQuery, SignalDatasourceOptions> {
   constructor(instanceSettings: DataSourceInstanceSettings<SignalDatasourceOptions>) {
     super(instanceSettings);
+
+    // Channels managed by this datasource instance
+    this.channelSupport = new LiveMeasurementsSupport()
   }
 
   query(request: DataQueryRequest<SignalQuery>): Observable<DataQueryResponse> {

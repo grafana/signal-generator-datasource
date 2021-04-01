@@ -19,7 +19,7 @@ func TestStream(t *testing.T) {
 	})
 	assert.NoError(t, err, "error loading live server")
 
-	// Initalize streams
+	// Initialize streams.
 	cfg, err := capture.LoadCaptureSetConfig("../../config/demo-streams.json")
 	assert.NoError(t, err, "error loading cfg")
 

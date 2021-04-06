@@ -154,8 +154,6 @@ func (s *SignalStreamer) doStream(ctx context.Context, sender backend.StreamPack
 
 	backend.Logger.Info("start streaming")
 
-	first := true
-
 	for {
 		select {
 		case <-ctx.Done():
@@ -184,23 +182,13 @@ func (s *SignalStreamer) doStream(ctx context.Context, sender backend.StreamPack
 				s.frame.Fields[idx+1].Set(0, v)
 			}
 
-			bytes, err := data.FrameToJSON(s.frame, false, true)
+			bytes, err := data.FrameToJSON(s.frame, true, true)
 			if err != nil {
 				backend.Logger.Warn("error writing json data", "error", err)
 				continue // return?  kills tream?
 			}
 			packet := &backend.StreamPacket{
-				Payload: bytes,
-			}
-
-			if first {
-				bytes, err = data.FrameToJSON(s.frame, true, false)
-				if err != nil {
-					backend.Logger.Warn("error wrting schema", "error", err)
-					continue // return?  kills stream?
-				}
-				first = false
-				packet.Header = bytes // the schema
+				Data: bytes, // data and schema every time :(
 			}
 
 			err = sender.Send(packet)

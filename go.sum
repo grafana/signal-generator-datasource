@@ -136,10 +136,8 @@ github.com/gorilla/websocket v1.4.2/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/ad
 github.com/grafana/grafana-edge-app v0.0.0-20210309010455-fc89dec2e783 h1:AtoOy5i2XadOv1Fjf+xN/pflv11Wpvv0P6TVlBjKBQc=
 github.com/grafana/grafana-edge-app v0.0.0-20210309010455-fc89dec2e783/go.mod h1:BKmi5yudTfmyAxCSU2COHonxYcHoWPurf4pnq6DtUZk=
 github.com/grafana/grafana-plugin-sdk-go v0.88.1-0.20210225190329-ddb246ad1a58/go.mod h1:snG2nLpM3KTklF3kobsBlCW01GZ0DegBllAYhmXytm4=
-github.com/grafana/grafana-plugin-sdk-go v0.90.0 h1:ea+mTQSr/Sk00WPyRn4guFjSJMRezaOEtfA+jVwFljk=
-github.com/grafana/grafana-plugin-sdk-go v0.90.0/go.mod h1:Ot3k7nY7P6DXmUsDgKvNB7oG1v7PRyTdmnYVoS554bU=
-github.com/grafana/grafana-plugin-sdk-go v0.90.1-0.20210401082842-7ff4286e360b h1:lmoZ0AsKs8P6fQ0AMwJkJP4hQ4L3O0oiUAdh9DyeQ/k=
-github.com/grafana/grafana-plugin-sdk-go v0.90.1-0.20210401082842-7ff4286e360b/go.mod h1:Ot3k7nY7P6DXmUsDgKvNB7oG1v7PRyTdmnYVoS554bU=
+github.com/grafana/grafana-plugin-sdk-go v0.91.1-0.20210406164418-35999a631d39 h1:2s0/ZbUXkjAgj/56TzZTxbM1Lvzk5kWaNamGhZVCVdU=
+github.com/grafana/grafana-plugin-sdk-go v0.91.1-0.20210406164418-35999a631d39/go.mod h1:Ot3k7nY7P6DXmUsDgKvNB7oG1v7PRyTdmnYVoS554bU=
 github.com/grpc-ecosystem/go-grpc-middleware v1.0.1-0.20190118093823-f849b5445de4/go.mod h1:FiyG127CGDf3tlThmgyCl78X/SZQqEOJBCDaAfeWzPs=
 github.com/grpc-ecosystem/go-grpc-middleware v1.2.2 h1:FlFbCRLd5Jr4iYXZufAvgWN6Ao0JrI5chLINnUXDDr0=
 github.com/grpc-ecosystem/go-grpc-middleware v1.2.2/go.mod h1:EaizFBKfUKtMIF5iaDEhniwNedqGo9FuLFzppDr3uwI=

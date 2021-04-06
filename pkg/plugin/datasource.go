@@ -217,7 +217,6 @@ func (ds *Datasource) doAWG(ctx context.Context, query *models.SignalQuery) (dr 
 }
 
 func (ds *Datasource) doStream(ctx context.Context, query *models.SignalQuery) (dr backend.DataResponse) {
-
 	if len(query.Stream) > 1 {
 		s, ok := ds.streams[query.Stream]
 		if !ok {
@@ -240,9 +239,10 @@ func (ds *Datasource) doStream(ctx context.Context, query *models.SignalQuery) (
 	return
 }
 
-func (ds *Datasource) CanSubscribeToStream(_ context.Context, _ *backend.SubscribeToStreamRequest) (*backend.SubscribeToStreamResponse, error) {
-	return &backend.SubscribeToStreamResponse{
-		OK: true,
+func (ds *Datasource) CanSubscribeToStream(_ context.Context, _ *backend.SubscribeStreamRequest) (*backend.SubscribeStreamResponse, error) {
+	return &backend.SubscribeStreamResponse{
+		Status:       backend.SubscribeStreamStatusOK,
+		UseRunStream: true,
 	}, nil
 }
 

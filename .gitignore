@@ -16,6 +16,7 @@ provisioning
 
 # Include vscode debugger config
 !.vscode/launch.json
+__debug_bin
 
 # Jest coverage
 coverage/

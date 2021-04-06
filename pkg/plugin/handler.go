@@ -93,7 +93,7 @@ func (cr *DatasourceHandler) CallResource(ctx context.Context, req *backend.Call
 	return nil
 }
 
-func (cr *DatasourceHandler) CanSubscribeToStream(ctx context.Context, req *backend.SubscribeToStreamRequest) (*backend.SubscribeToStreamResponse, error) {
+func (cr *DatasourceHandler) SubscribeStream(ctx context.Context, req *backend.SubscribeStreamRequest) (*backend.SubscribeStreamResponse, error) {
 	h, err := cr.im.Get(req.PluginContext)
 	if err != nil {
 		return nil, err
@@ -113,4 +113,10 @@ func (cr *DatasourceHandler) RunStream(ctx context.Context, req *backend.RunStre
 		return ds.RunStream(ctx, req, sender)
 	}
 	return dserrors.ErrorBadDatasource
+}
+
+func (cr *DatasourceHandler) PublishStream(ctx context.Context, req *backend.PublishStreamRequest) (*backend.PublishStreamResponse, error) {
+	return &backend.PublishStreamResponse{
+		Status: backend.PublishStreamStatusPermissionDenied, // ?? Unsupported
+	}, nil
 }

@@ -7,12 +7,12 @@ import {
   LiveChannelScope,
   Field,
 } from '@grafana/data';
-import { DataSourceWithBackend, getLiveMeasurementsObserver } from '@grafana/runtime';
+import { DataSourceWithBackend, getLiveDataStream } from '@grafana/runtime';
 
 import { SignalQuery, SignalDatasourceOptions, QueryType, SignalCustomMeta } from './types';
 
 import { Observable, of } from 'rxjs';
-import { switchMap, map } from 'rxjs/operators';
+import { switchMap } from 'rxjs/operators';
 import { LiveMeasurementsSupport } from 'support';
 
 export class DataSource extends DataSourceWithBackend<SignalQuery, SignalDatasourceOptions> {
@@ -50,31 +50,7 @@ export class DataSource extends DataSourceWithBackend<SignalQuery, SignalDatasou
               }
 
               // Ling the streaming data to the schema :(
-              return getLiveMeasurementsObserver(addr, request.requestId).pipe(
-                map((r) => {
-                  const frame = r.data[0] as DataFrame;
-                  if (frame) {
-                    const fields = frame.fields.map((f) => {
-                      const orig = byName.get(f.name);
-                      if (orig) {
-                        return { ...f, config: orig.config };
-                      }
-                      return f;
-                    });
-
-                    return {
-                      ...r,
-                      data: [
-                        {
-                          ...frame,
-                          fields,
-                        },
-                      ],
-                    };
-                  }
-                  return r;
-                })
-              );
+              return getLiveDataStream({ addr, key: request.requestId });
             }
           }
           return of(res);
@@ -84,22 +60,3 @@ export class DataSource extends DataSourceWithBackend<SignalQuery, SignalDatasou
     return super.query(request);
   }
 }
-
-// .pipe(
-//   map((evt) => {
-//     if (isLiveChannelMessageEvent(evt)) {
-//       rsp.data = evt.message.getData(query);
-//       if (!rsp.data.length) {
-//         // ?? skip when data is empty ???
-//       }
-//       delete rsp.error;
-//       rsp.state = LoadingState.Streaming;
-//     } else if (isLiveChannelStatusEvent(evt)) {
-//       if (evt.error != null) {
-//         rsp.error = rsp.error;
-//         rsp.state = LoadingState.Error;
-//       }
-//     }
-//     return { ...rsp }; // send event on all status messages
-//   })
-// );

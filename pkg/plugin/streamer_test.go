@@ -12,7 +12,7 @@ import (
 )
 
 func TestStream(t *testing.T) {
-	//t.Skip()
+	t.Skip()
 
 	client, err := live.InitGrafanaLiveClient(live.ConnectionInfo{
 		URL: "http://localhost:3000",

@@ -23,9 +23,6 @@ type BaseSignalField struct {
 	Name   string            `json:"name,omitempty"`
 	Config *data.FieldConfig `json:"config,omitempty"`
 	Labels data.Labels       `json:"labels,omitempty"`
-
-	// Not set in json
-	DataType data.FieldType `json:"-"`
 }
 
 func (b *BaseSignalField) SetValue(v string) error {
@@ -35,7 +32,8 @@ func (b *BaseSignalField) SetValue(v string) error {
 type ExpressionConfig struct {
 	BaseSignalField
 
-	Expr string `json:"expr,omitempty"`
+	Expr     string         `json:"expr,omitempty"`
+	DataType data.FieldType `json:"type,omitempty"`
 }
 
 type TimeFieldConfig struct {

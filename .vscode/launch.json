@@ -10,7 +10,6 @@
             "env": {},
             "args": [
                 "--standalone=true",
-                "--address=:21222"
             ]
         }
     ]

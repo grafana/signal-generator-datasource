@@ -39,11 +39,6 @@ func NewServerInstance(settings backend.DataSourceInstanceSettings) (instancemgm
 	}
 	ds := NewDatasource(s)
 
-	for k, v := range ds.streams {
-		backend.Logger.Info("START streaming", "xx", k)
-		v.Start()
-	}
-
 	return ds, nil
 }
 
@@ -99,7 +94,7 @@ func (cr *DatasourceHandler) SubscribeStream(ctx context.Context, req *backend.S
 		return nil, err
 	}
 	if ds, ok := h.(*Datasource); ok {
-		return ds.CanSubscribeToStream(ctx, req)
+		return ds.SubscribeStream(ctx, req)
 	}
 	return nil, dserrors.ErrorBadDatasource
 }

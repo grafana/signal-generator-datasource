@@ -6,6 +6,6 @@ import { SignalQuery, SignalDatasourceOptions } from './types';
 import { LiveMeasurementsSupport } from 'support';
 
 export const plugin = new DataSourcePlugin<DataSource, SignalQuery, SignalDatasourceOptions>(DataSource)
-  .setChannelSupport(new LiveMeasurementsSupport()) // channels managed under /plugins/grafana-signal-generator/*
+  .setChannelSupport(new LiveMeasurementsSupport())
   .setConfigEditor(ConfigEditor)
   .setQueryEditor(QueryEditor);

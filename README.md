@@ -1,5 +1,4 @@
 # Signal Generator
 
-Waveform Generator?  AWG?
-streaming testbed...
+Streaming test datasource
 

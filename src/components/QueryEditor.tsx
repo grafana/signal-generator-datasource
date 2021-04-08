@@ -12,7 +12,6 @@ type Props = QueryEditorProps<DataSource, SignalQuery, SignalDatasourceOptions>;
 const queryTypes = [
   { label: 'Signal Generator', value: QueryType.AWG },
   { label: 'Variables', value: QueryType.Easing },
-  { label: 'Streams', value: QueryType.Streams },
 ] as Array<SelectableValue<QueryType>>;
 
 export class QueryEditor extends PureComponent<Props> {
@@ -76,22 +75,13 @@ export class QueryEditor extends PureComponent<Props> {
     onRunQuery();
   };
 
-  onToggleOneshot = () => {
+  onToggleStream = () => {
     const { onChange, query, onRunQuery } = this.props;
-    onChange({ ...query, oneshot: !query.oneshot });
+    onChange({ ...query, stream: !query.stream });
     onRunQuery();
   };
 
   renderQuery(query: SignalQuery) {
-    if (query.queryType === QueryType.Streams) {
-      return (
-        <InlineFieldRow>
-          <InlineField label="Oneshot" labelWidth={14}>
-            <InlineSwitch css="" onChange={this.onToggleOneshot} name="levelColumn" value={!!query.oneshot} />
-          </InlineField>
-        </InlineFieldRow>
-      );
-    }
     if (query.queryType !== QueryType.AWG) {
       return <div>TODO: not implemented yet: ${query.queryType}</div>;
     }
@@ -115,6 +105,12 @@ export class QueryEditor extends PureComponent<Props> {
             />
           );
         })}
+
+        <InlineFieldRow>
+          <InlineField label="Stream" labelWidth={8}>
+            <InlineSwitch css="" onChange={this.onToggleStream} value={query.stream} />
+          </InlineField>
+        </InlineFieldRow>
       </>
     );
   }

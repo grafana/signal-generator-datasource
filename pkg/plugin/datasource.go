@@ -4,53 +4,24 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"sync"
+	"time"
 
 	"github.com/grafana/grafana-edge-app/pkg/actions"
-	"github.com/grafana/grafana-edge-app/pkg/capture"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
-	"github.com/grafana/grafana-plugin-sdk-go/live"
 	"github.com/grafana/signal-generator-datasource/pkg/models"
 	"github.com/grafana/signal-generator-datasource/pkg/waves"
 )
 
 type Datasource struct {
-	live     *live.GrafanaLiveClient
 	settings *models.DatasurceSettings
 	streams  map[string]*SignalStreamer
 }
 
 func NewDatasource(settings *models.DatasurceSettings) *Datasource {
-	client, _ := live.InitGrafanaLiveClient(live.ConnectionInfo{
-		URL: settings.LiveURL,
-	})
-
-	// Initialize streams
-	streams := make(map[string]*SignalStreamer)
-	for _, path := range settings.Capture {
-		if client == nil {
-			backend.Logger.Error("missing live server connection")
-			continue
-		}
-
-		cfg, err := capture.LoadCaptureSetConfig(path)
-		if err != nil {
-			backend.Logger.Error("error loading config", "err", err, "path", path)
-		} else {
-			stream, err := NewSignalStreamer(cfg, client)
-			if err != nil {
-				backend.Logger.Error("error initalizing stream", "err", err, "path", path)
-			} else {
-				streams[cfg.Name] = stream
-			}
-		}
-	}
-
 	return &Datasource{
 		settings: settings,
-		live:     client,
-		streams:  streams,
+		streams:  make(map[string]*SignalStreamer),
 	}
 }
 
@@ -156,8 +127,6 @@ func (ds *Datasource) doQuery(ctx context.Context, query *models.SignalQuery) ba
 	switch query.QueryType {
 	case models.QueryTypeAWG:
 		return ds.doAWG(ctx, query)
-	case models.QueryStreams:
-		return ds.doStream(ctx, query)
 	}
 	return backend.DataResponse{
 		Error: fmt.Errorf("unsupported query: %s", query.QueryType),
@@ -209,52 +178,67 @@ func (ds *Datasource) doQuery(ctx context.Context, query *models.SignalQuery) ba
 // 	return
 // }
 
+func (ds *Datasource) initStream(query *models.SignalQuery, gen *waves.SignalGen, frame *data.Frame) string {
+	key := models.GetStreamKey(query)
+	_, ok := ds.streams[key]
+	if !ok {
+		ds.streams[key] = &SignalStreamer{
+			interval: query.Interval,
+			signal:   gen,
+			frame:    frame.EmptyCopy(),
+			running:  false,
+			init:     time.Now(),
+		}
+	}
+	return key
+}
+
 func (ds *Datasource) doAWG(ctx context.Context, query *models.SignalQuery) (dr backend.DataResponse) {
-	frame, err := waves.DoSignalQuery(query)
+	frame, gen, err := waves.DoSignalQuery(query)
+	if query.Stream {
+		key := ds.initStream(query, gen, frame)
+		frame.SetMeta(&data.FrameMeta{
+			Custom: &models.CustomFrameMeta{
+				StreamKey: key,
+			},
+		})
+	}
 	dr.Frames = data.Frames{frame}
 	dr.Error = err
 	return
 }
 
-func (ds *Datasource) doStream(ctx context.Context, query *models.SignalQuery) (dr backend.DataResponse) {
-	if len(query.Stream) > 1 {
-		s, ok := ds.streams[query.Stream]
-		if !ok {
-			dr.Error = fmt.Errorf("unknown stream: %s", query.Stream)
-			return
-		}
-
-		frames, err := s.Frames()
-		dr.Frames = frames
-		dr.Error = err
-		return
+func (ds *Datasource) SubscribeStream(_ context.Context, req *backend.SubscribeStreamRequest) (*backend.SubscribeStreamResponse, error) {
+	s, ok := ds.streams[req.Path]
+	if s == nil || !ok {
+		return &backend.SubscribeStreamResponse{
+			Status: backend.SubscribeStreamStatusNotFound,
+		}, nil
 	}
 
-	for _, s := range ds.streams {
-		f, _ := s.Frames()
-		if f != nil {
-			dr.Frames = append(dr.Frames, f...)
-		}
+	bytes, err := data.FrameToJSON(s.frame, true, false) // only schema
+	if err != nil {
+		return nil, err
 	}
-	return
-}
 
-func (ds *Datasource) CanSubscribeToStream(_ context.Context, _ *backend.SubscribeStreamRequest) (*backend.SubscribeStreamResponse, error) {
 	return &backend.SubscribeStreamResponse{
 		Status:       backend.SubscribeStreamStatusOK,
 		UseRunStream: true,
+		Data:         bytes, // just the schema
 	}, nil
 }
 
-func (ds *Datasource) RunStream(ctx context.Context, _ *backend.RunStreamRequest, sender backend.StreamPacketSender) error {
-	var wg sync.WaitGroup
-	for _, stream := range ds.streams {
-		wg.Add(1)
-		go func(stream *SignalStreamer) {
-			defer wg.Done()
-			stream.doStream(ctx, sender)
-		}(stream)
+func (ds *Datasource) RunStream(ctx context.Context, req *backend.RunStreamRequest, sender backend.StreamPacketSender) error {
+	s, ok := ds.streams[req.Path]
+	if s == nil || !ok {
+		return nil // or error?
 	}
-	wg.Wait()
+
+	// When the stream is done, remove it
+	defer func() {
+		delete(ds.streams, req.Path)
+	}()
+
+	s.doStream(ctx, sender)
 	return nil
 }

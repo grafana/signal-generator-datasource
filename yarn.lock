@@ -1032,10 +1032,10 @@
   resolved "https://npm.pkg.github.com/download/@grafana/aws-sdk/0.0.3/716ea62353eebdae8ce198b95aa6f4fb9868b3c0f8b6db84c0b7e2be9e751fbf#bc632c6c77971a5474acbe45847420503679fc75"
   integrity sha512-V0PJLk+oU1C33knurXp8BkT5N2ctDu9b21zpK16vkJAs5aOiH/OaOhQ/IP9ipxYhB+b9PFjr8RXagV/8XJ8xwg==
 
-"@grafana/data@7.5.0-pre.0-b1c84c795f", "@grafana/data@canary":
-  version "7.5.0-pre.0-b1c84c795f"
-  resolved "https://npm.pkg.github.com/download/@grafana/data/7.5.0-pre.0-b1c84c795f/2676adb6064a7dce9689ed7e4c308cb57d09c727e054a3e13f23a790e2ba13cf#aba4ace562097ecf42ca4b98c5a3402329c84d2f"
-  integrity sha512-kg7ZmC50NYb9LJlU24Kzva2aCis2ibxKUjrEmViCsnY5XA8UiiJB8H1SJ/sQswd0RA/kY0vsNd4jWiHkiaaQdA==
+"@grafana/data@7.5.0-pre.0-8f8cad9b83", "@grafana/data@canary":
+  version "7.5.0-pre.0-8f8cad9b83"
+  resolved "https://npm.pkg.github.com/download/@grafana/data/7.5.0-pre.0-8f8cad9b83/bc0f054c99b145f85f51f59deaf321782c08b595efcc9d0529531cae8c76bce8#1adbec5a45a46e65cb0ae0435c14e323f54be179"
+  integrity sha512-nQqXBnE84tuEpxhFDbE6Pu8Ry6pwEhxYiQANtN7wNnKj2+uloBwJalNeeFp3gQ6RI3GjlKJf2vyOHPOnWrlHIA==
   dependencies:
     "@braintree/sanitize-url" "4.0.0"
     "@types/d3-interpolate" "^1.3.1"
@@ -1045,10 +1045,10 @@
     rxjs "6.6.3"
     xss "1.0.6"
 
-"@grafana/e2e-selectors@7.5.0-pre.0-b1c84c795f":
-  version "7.5.0-pre.0-b1c84c795f"
-  resolved "https://npm.pkg.github.com/download/@grafana/e2e-selectors/7.5.0-pre.0-b1c84c795f/cdecb54036707dd66d887d350f9266fb837f87379d635f3da123e4dc885c212c#ceb395fa33ca2811fd417cab94a6420e3d26b58e"
-  integrity sha512-mNrdXTRARN0p+CaMddvMYm8uS2CPeXUE9O7xZy5ME+u8hLQZvNnxCqXV9KFgS2odD/MzL66lC/uTwja4n/oTKw==
+"@grafana/e2e-selectors@7.5.0-pre.0-8f8cad9b83":
+  version "7.5.0-pre.0-8f8cad9b83"
+  resolved "https://npm.pkg.github.com/download/@grafana/e2e-selectors/7.5.0-pre.0-8f8cad9b83/cac47367aeb2e5d7165bba64cefc19dd8fdf5dfdfc3b04872ce615812fb118d4#fa00e1aa22d22580875ca58155c4f8fa61374bd8"
+  integrity sha512-z64/Iqdv2wmvwFbLP53jLhNkdOjQs0viaFw8cjes/4votlX0FLO6nUmuFtpxcTkwVPXREhGrivm/RjepM2cr+A==
   dependencies:
     "@grafana/tsconfig" "^1.0.0-rc1"
     commander "5.0.0"
@@ -1073,13 +1073,13 @@
     typescript "4.1.3"
 
 "@grafana/runtime@canary":
-  version "7.5.0-pre.0-b1c84c795f"
-  resolved "https://npm.pkg.github.com/download/@grafana/runtime/7.5.0-pre.0-b1c84c795f/76cf0dec61197dbc62ca3c5e731c3273bab209ece46178bfd698b61590cb7809#f4b3f1dcbdac6254ea8fa34be6f0966755bea7be"
-  integrity sha512-7k1urhqao8mNXZW2PYv0FWXGybSEimfGItwdlj9FjIP5ShNLOgdzJoY4t7FJvtpLwLJeX8SwEeDBWb3oju8I8w==
+  version "7.5.0-pre.0-8f8cad9b83"
+  resolved "https://npm.pkg.github.com/download/@grafana/runtime/7.5.0-pre.0-8f8cad9b83/05f0b892071b4b31410fbc09640fffa0f21cd924a486817868fe575eccc17306#005ffdfa8dd20045d72ac2b18fb5fd2c506f7946"
+  integrity sha512-xf7uEm1o0q096RUvVqTauxcFN8RgjJQxlqeusmNdhkHZ8wVZfHAr3GlXHlSfmLi+nHpHm+WfzOC71sBof17mMg==
   dependencies:
-    "@grafana/data" "7.5.0-pre.0-b1c84c795f"
-    "@grafana/e2e-selectors" "7.5.0-pre.0-b1c84c795f"
-    "@grafana/ui" "7.5.0-pre.0-b1c84c795f"
+    "@grafana/data" "7.5.0-pre.0-8f8cad9b83"
+    "@grafana/e2e-selectors" "7.5.0-pre.0-8f8cad9b83"
+    "@grafana/ui" "7.5.0-pre.0-8f8cad9b83"
     history "4.10.1"
     systemjs "0.20.19"
     systemjs-plugin-css "0.1.37"
@@ -1107,16 +1107,16 @@
     tiny-warning "^0.0.3"
 
 "@grafana/toolkit@canary":
-  version "7.5.0-pre.0-b1c84c795f"
-  resolved "https://npm.pkg.github.com/download/@grafana/toolkit/7.5.0-pre.0-b1c84c795f/d1fb75b6d9804dec63b01075d4635a43a5dabe51cbccd2d6c2707536f1d612dd#e6772aa8ac76e24f7afb93639d13fff565013656"
-  integrity sha512-d+EeMnp+zGqKSWRES+g6aMfY1oZ5/FPESUNNrP1951SSHFBGRRieT2j37+Rr7EVfFfFgQnNufRhFU+Xd4kFKNw==
+  version "7.5.0-pre.0-8f8cad9b83"
+  resolved "https://npm.pkg.github.com/download/@grafana/toolkit/7.5.0-pre.0-8f8cad9b83/ec0576f9c7cffa8f79573990096b561b25c5021971533a8b1c2c3745f9e5f3d7#ab9d18bf1cab4075ffce1fc85f7927fab8d8194b"
+  integrity sha512-IXP/xQB9VlnUkru7EVVAdOcLIY30FG8kB3bQrBR0n7qUEycv8+Yx/8aD310JKMk7p3yn0g8gGAlmCYp1gMc2qw==
   dependencies:
     "@babel/core" "7.13.14"
     "@babel/preset-env" "7.13.12"
-    "@grafana/data" "7.5.0-pre.0-b1c84c795f"
+    "@grafana/data" "7.5.0-pre.0-8f8cad9b83"
     "@grafana/eslint-config" "2.3.0"
     "@grafana/tsconfig" "^1.0.0-rc1"
-    "@grafana/ui" "7.5.0-pre.0-b1c84c795f"
+    "@grafana/ui" "7.5.0-pre.0-8f8cad9b83"
     "@types/command-exists" "^1.2.0"
     "@types/expect-puppeteer" "3.3.1"
     "@types/fs-extra" "^8.1.0"
@@ -1198,16 +1198,16 @@
   resolved "https://npm.pkg.github.com/download/@grafana/tsconfig/1.0.0-rc1/ec74da3d2ff8cb1fbd24b31fadeb6fca33fcd463748454753929ca5693bc595d#6c4fa7467497f334359d001455eb0fd1427138f4"
   integrity sha512-59noTHqQdYKPzpd4P6Rp/+3aIsA2eqxpu5v6LuwhV9QlEwsZRY0HTyEqO0PAyJes4C8Mry01qBHI6NpAbd8LiQ==
 
-"@grafana/ui@7.5.0-pre.0-b1c84c795f", "@grafana/ui@canary":
-  version "7.5.0-pre.0-b1c84c795f"
-  resolved "https://npm.pkg.github.com/download/@grafana/ui/7.5.0-pre.0-b1c84c795f/42175e1c91fa86ad356399d864d30cf44dd92691e37bc1ce64573d06747721c7#d998f7e0cee8225673f34e08003e81b7d35d0ef6"
-  integrity sha512-5QUxZx++ycmqtbsZSTSG3YBslDRijBiGtJJ1CCfL7bv1n1RwQ62Ii/D0+7bvkyw4eje8J6EeblGpahypIZ6Jig==
+"@grafana/ui@7.5.0-pre.0-8f8cad9b83", "@grafana/ui@canary":
+  version "7.5.0-pre.0-8f8cad9b83"
+  resolved "https://npm.pkg.github.com/download/@grafana/ui/7.5.0-pre.0-8f8cad9b83/f8f8d87baa09675889bd60f7297bb2b4a58e794d9a62f25d30bfdcd818c22575#e680144cde9d12457bdfaf3a07072e381980f501"
+  integrity sha512-V3lfZUb99FNgoE5QyNhk+RVD1BdW1AG7ioEZffGxBxhf4P0ZvuE6mgLhh69WmmFqWFKb77IqB6+WZzRFQSxVdg==
   dependencies:
     "@emotion/css" "11.1.3"
     "@emotion/react" "11.1.5"
     "@grafana/aws-sdk" "0.0.3"
-    "@grafana/data" "7.5.0-pre.0-b1c84c795f"
-    "@grafana/e2e-selectors" "7.5.0-pre.0-b1c84c795f"
+    "@grafana/data" "7.5.0-pre.0-8f8cad9b83"
+    "@grafana/e2e-selectors" "7.5.0-pre.0-8f8cad9b83"
     "@grafana/slate-react" "0.22.9-grafana"
     "@grafana/tsconfig" "^1.0.0-rc1"
     "@popperjs/core" "2.5.4"
@@ -3574,11 +3574,9 @@ chownr@^1.1.1, chownr@^1.1.2:
   integrity sha512-jJ0bqzaylmJtVnNgzTeSOs8DPavpbYgEr/b0YL8/2GO3xJEhInFmhKMUnEJQjZumK7KXGFhUy89PrsJWlakBVg==
 
 chrome-trace-event@^1.0.2:
-  version "1.0.2"
-  resolved "https://registry.yarnpkg.com/chrome-trace-event/-/chrome-trace-event-1.0.2.tgz#234090ee97c7d4ad1a2c4beae27505deffc608a4"
-  integrity sha512-9e/zx1jw7B4CO+c/RXoCsfg/x1AfUBioy4owYH0bJprEYAx5hRFLRhWBqHAG57D0ZM4H7vxbP7bPe0VwhQRYDQ==
-  dependencies:
-    tslib "^1.9.0"
+  version "1.0.3"
+  resolved "https://registry.yarnpkg.com/chrome-trace-event/-/chrome-trace-event-1.0.3.tgz#1015eced4741e15d06664a957dbbf50d041e26ac"
+  integrity sha512-p3KULyQg4S7NIHixdwbGX+nFHkoBiA4YQmyWtjb8XngSKV124nJmRysgAeujbUVb15vh+RvFUfCPqU7rXk+hZg==
 
 ci-info@^2.0.0:
   version "2.0.0"

@@ -1,7 +1,7 @@
 package plugin
 
 import (
-	"encoding/json"
+	"context"
 	"fmt"
 	"math"
 	"time"
@@ -9,24 +9,20 @@ import (
 	"github.com/grafana/grafana-edge-app/pkg/capture"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
-	"github.com/grafana/grafana-plugin-sdk-go/live"
-	"github.com/grafana/grafana-plugin-sdk-go/measurement"
 	"github.com/grafana/signal-generator-datasource/pkg/models"
 	"github.com/grafana/signal-generator-datasource/pkg/waves"
 )
 
 // DatasourceHandler is the plugin entrypoint and implements all of the necessary handler functions for dataqueries, healthchecks, and resources.
 type SignalStreamer struct {
-	signal      *waves.SignalGen
-	client      *live.GrafanaLiveClient
-	channel     *live.GrafanaLiveChannel
-	running     bool
-	speedMillis int64
-	current     measurement.Measurement
-	frame       *data.Frame
+	interval time.Duration
+	signal   *waves.SignalGen
+	frame    *data.Frame
+	running  bool
+	init     time.Time // TODO, periodically kill non
 }
 
-func NewSignalStreamer(extcfg *capture.CaptureSetConfig, client *live.GrafanaLiveClient) (*SignalStreamer, error) {
+func NewSignalStreamerFromConfig(extcfg *capture.CaptureSetConfig) (*SignalStreamer, error) {
 	cfg := models.SignalConfig{
 		Time: models.TimeFieldConfig{
 			Period: "5s",
@@ -34,11 +30,11 @@ func NewSignalStreamer(extcfg *capture.CaptureSetConfig, client *live.GrafanaLiv
 		Fields: []models.ExpressionConfig{},
 	}
 
-	speedMillis := int64(1500)
+	interval := time.Second * 2 // 2s
 	if extcfg.Interval != "" {
 		d, err := time.ParseDuration(extcfg.Interval)
 		if err == nil {
-			speedMillis = d.Milliseconds()
+			interval = d
 		}
 	}
 
@@ -65,9 +61,9 @@ func NewSignalStreamer(extcfg *capture.CaptureSetConfig, client *live.GrafanaLiv
 			return nil, fmt.Errorf("missing value for field: %s", tag.Path)
 		}
 
-		ft := data.FieldTypeFloat64
-		if tag.FieldType != nil {
-			ft = *tag.FieldType
+		ft := tag.FieldType
+		if ft == data.FieldTypeUnknown {
+			ft = data.FieldTypeFloat64 // the default
 		}
 
 		cfg.Fields = append(cfg.Fields, models.ExpressionConfig{
@@ -99,96 +95,13 @@ func NewSignalStreamer(extcfg *capture.CaptureSetConfig, client *live.GrafanaLiv
 	}
 
 	frame := data.NewFrame(extcfg.Name, fields...)
-	frame.SetMeta(&data.FrameMeta{
-		Custom: &models.CustomFrameMeta{
-			StreamKey: "signal/" + extcfg.Name,
-		},
-	})
-
-	m := measurement.Measurement{
-		Name:   extcfg.Name,
-		Time:   0,
-		Values: make(map[string]interface{}, 5),
-	}
-
 	return &SignalStreamer{
-		signal:      gen,
-		client:      client,
-		current:     m,
-		frame:       frame,
-		speedMillis: speedMillis,
+		signal:   gen,
+		frame:    frame,
+		interval: interval,
+		running:  false,
+		init:     time.Now(),
 	}, nil
-}
-
-func (s *SignalStreamer) Stop() {
-	s.running = false
-}
-
-func (s *SignalStreamer) Start() {
-	if s.running {
-		backend.Logger.Info("already running")
-		return
-	}
-
-	// if s.signal == nil {
-	// 	cfg := models.SignalConfig{
-	// 		Time: models.TimeFieldConfig{
-	// 			Period: "5s",
-	// 		},
-	// 		Fields: []models.ExpressionConfig{},
-	// 	}
-	// 	// cfg.Fields = append(cfg.Fields, models.ExpressionConfig{
-	// 	// 	BaseSignalField: models.BaseSignalField{
-	// 	// 		Name: "A",
-	// 	// 	},
-	// 	// 	Expr: "Sine(x)",
-	// 	// })
-	// 	// cfg.Fields = append(cfg.Fields, models.ExpressionConfig{
-	// 	// 	BaseSignalField: models.BaseSignalField{
-	// 	// 		Name: "B",
-	// 	// 	},
-	// 	// 	Expr: "Sine(x+1.5) * 2 + Noise() * 0.4", // + Noise()*.5",
-	// 	// })
-	// 	// cfg.Fields = append(cfg.Fields, models.ExpressionConfig{
-	// 	// 	BaseSignalField: models.BaseSignalField{
-	// 	// 		Name: "C",
-	// 	// 	},
-	// 	// 	Expr: "Sine(x+1.5)*2",
-	// 	// })
-
-	// 	for i := 1; i < 5; i++ {
-	// 		off := float64(i) * 0.1
-
-	// 		cfg.Fields = append(cfg.Fields, models.ExpressionConfig{
-	// 			BaseSignalField: models.BaseSignalField{
-	// 				Name: fmt.Sprintf("Q%d", i),
-	// 			},
-	// 			Expr: fmt.Sprintf("Sine(x+%f) * %f", off*1.2, off*0.6), // + Noise()*.5",
-	// 		})
-	// 	}
-
-	// 	gen, _ := waves.NewSignalGenerator(cfg)
-	// 	if gen != nil {
-	// 		s.signal = gen
-	// 	}
-	// }
-
-	if s.channel == nil {
-		m := s.frame.Meta.Custom.(*models.CustomFrameMeta)
-
-		s.channel, _ = s.client.Subscribe(live.ChannelAddress{
-			Scope:     "grafana",
-			Namespace: "measurements",
-			Path:      m.StreamKey,
-		})
-	}
-
-	if s.speedMillis < 10 {
-		s.speedMillis = 2500 // every 2.5s
-	}
-
-	go s.doStream()
-	// s.doStream()
 }
 
 func (s *SignalStreamer) UpdateValues(props map[string]interface{}) error {
@@ -203,7 +116,6 @@ func (s *SignalStreamer) UpdateValues(props map[string]interface{}) error {
 
 	t := time.Now()
 	s.frame.Fields[0].Set(0, t)
-	s.current.Time = t.UnixNano() / int64(time.Millisecond)
 
 	// Set the time
 	for _, i := range s.signal.Inputs {
@@ -221,65 +133,76 @@ func (s *SignalStreamer) UpdateValues(props map[string]interface{}) error {
 		}
 		name := f.GetConfig().Name
 		parameters[name] = v
-		s.current.Values[name] = v
 
 		s.frame.Fields[idx+1].Set(0, v)
 	}
 	return nil
 }
 
-func (s *SignalStreamer) doStream() {
-	s.running = true
-	ticker := time.NewTicker(time.Duration(s.speedMillis) * time.Millisecond)
-
-	msg := measurement.Batch{
-		Measurements: make([]measurement.Measurement, 1), // always a single measurement
-	}
+func (s *SignalStreamer) doStream(ctx context.Context, sender backend.StreamPacketSender) {
+	ticker := time.NewTicker(s.interval)
+	defer func() {
+		s.running = false
+		ticker.Stop()
+	}()
 
 	paramCount := len(s.signal.Fields) + 4
 	parameters := make(map[string]interface{}, paramCount)
 	parameters["PI"] = math.Pi
 
-	backend.Logger.Info("START STREAMING", "sig", s.signal)
+	backend.Logger.Info("start streaming")
+	s.running = true
 
-	for t := range ticker.C {
-		if !s.running {
-			backend.Logger.Info("stopping!!!")
+	// local copy
+	fields := make([]*data.Field, len(s.frame.Fields))
+	for idx, f := range s.frame.Fields {
+		fields[idx] = data.NewFieldFromFieldType(f.Type(), 1)
+	}
+	frame := data.NewFrame("", fields...)
+
+	for {
+		select {
+		case <-ctx.Done():
+			backend.Logger.Info("stop streaming (context canceled)")
 			return
-		}
+		case t := <-ticker.C:
+			frame.Fields[0].Set(0, t)
 
-		s.frame.Fields[0].Set(0, t)
-		s.current.Time = t.UnixNano() / int64(time.Millisecond)
+			// Set the time
+			for _, i := range s.signal.Inputs {
+				err := i.UpdateEnv(&t, parameters)
+				if err != nil {
+					backend.Logger.Warn("ERROR updating time", "error", err)
+				}
+			}
 
-		// Set the time
-		for _, i := range s.signal.Inputs {
-			err := i.UpdateEnv(&t, parameters)
+			// Calculate each value
+			for idx, f := range s.signal.Fields {
+				v, err := f.GetValue(parameters)
+				if err != nil {
+					v = float64(0) // TODO!!!! better error support!!!
+				}
+				name := f.GetConfig().Name
+				parameters[name] = v
+
+				frame.Fields[idx+1].Set(0, v)
+			}
+
+			bytes, err := data.FrameToJSON(frame, false, true)
 			if err != nil {
-				backend.Logger.Warn("ERROR updating time", "error", err)
+				backend.Logger.Warn("error writing json data", "error", err)
+				continue // return?  kills tream?
+			}
+			packet := &backend.StreamPacket{
+				Data: bytes, // data and schema every time :(
+			}
+
+			err = sender.Send(packet)
+			if err != nil {
+				backend.Logger.Warn("unable to send data", "error", err)
+				continue
 			}
 		}
-
-		// Calculate each value
-		for idx, f := range s.signal.Fields {
-			v, err := f.GetValue(parameters)
-			if err != nil {
-				v = float64(0) // TODO!!!! better error support!!!
-			}
-			name := f.GetConfig().Name
-			parameters[name] = v
-			s.current.Values[name] = v
-
-			s.frame.Fields[idx+1].Set(0, v)
-		}
-
-		msg.Measurements[0] = s.current
-
-		bytes, err := json.Marshal(&msg)
-		if err != nil {
-			backend.Logger.Warn("unable to marshal line", "error", err)
-			continue
-		}
-		s.channel.Publish(bytes)
 	}
 }
 

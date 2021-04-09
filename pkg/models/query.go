@@ -1,6 +1,7 @@
 package models
 
 import (
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -12,7 +13,6 @@ import (
 const (
 	QueryTypeAWG     = "AWG"
 	QueryTypeEasings = "easing"
-	QueryStreams     = "streams"
 )
 
 // x = 0-2π
@@ -63,7 +63,7 @@ type SignalConfig struct {
 
 type SignalQuery struct {
 	Signal SignalConfig `json:"signal,omitempty"` // all components get added together
-	Stream string       `json:"stream,omitempty"` // used for streams
+	Stream bool         `json:"stream,omitempty"` // flag if this should be a streaming query
 
 	// These are added from the base query
 	Interval      time.Duration     `json:"-"`
@@ -85,4 +85,20 @@ func GetSignalQuery(dq *backend.DataQuery) (*SignalQuery, error) {
 	query.QueryType = dq.QueryType
 
 	return query, nil
+}
+
+func GetStreamKey(query *SignalQuery) string {
+	if query == nil || len(query.Signal.Fields) < 1 {
+		return ""
+	}
+
+	b, err := json.Marshal(query.Signal)
+	if err != nil {
+		return ""
+	}
+
+	h := sha256.New()
+	_, _ = h.Write(b)
+	_, _ = h.Write([]byte(query.Interval.String())) // Interval is part of the stream properties!
+	return fmt.Sprintf("%x", h.Sum(nil))
 }

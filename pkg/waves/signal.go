@@ -215,10 +215,10 @@ func NewSignalGenerator(args models.SignalConfig) (*SignalGen, error) {
 	return gen, nil
 }
 
-func DoSignalQuery(query *models.SignalQuery) (*data.Frame, error) {
+func DoSignalQuery(query *models.SignalQuery) (*data.Frame, *SignalGen, error) {
 	gen, err := NewSignalGenerator(query.Signal)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// Setup the initial fields
@@ -227,7 +227,7 @@ func DoSignalQuery(query *models.SignalQuery) (*data.Frame, error) {
 	for _, i := range gen.Inputs {
 		rsp, env, err := i.GetValues(query)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		if rsp != nil {
@@ -269,5 +269,5 @@ func DoSignalQuery(query *models.SignalQuery) (*data.Frame, error) {
 
 	outfields = append(outfields, fields...)
 	frame := data.NewFrame(query.Signal.Name, outfields...)
-	return frame, nil
+	return frame, gen, nil
 }

@@ -3,7 +3,6 @@ import { DataQuery, DataSourceJsonData, FieldConfig, Labels } from '@grafana/dat
 export enum QueryType {
   AWG = 'AWG',
   Easing = 'easing',
-  Streams = 'streams',
 }
 
 // export enum WaveformType {
@@ -37,23 +36,14 @@ export interface SignalConfig {
   time: TimeFieldConfig;
   fields: SignalField[];
 }
-
-/**
- * Metadata attached to DataFrame results
- */
-export interface SignalCustomMeta {
-  streamKey?: string;
-}
-
 export interface SignalQuery extends DataQuery {
   queryType?: QueryType;
   signal?: SignalConfig;
-  oneshot?: boolean;
+  stream?: boolean;
 }
 
 export interface SignalDatasourceOptions extends DataSourceJsonData {
-  live: string;
-  captureX: string; // paths to local files
+  // nothign for now
 }
 
 export interface SignalSecureJsonData {

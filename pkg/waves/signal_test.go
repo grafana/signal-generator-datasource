@@ -34,7 +34,7 @@ func TestEval(t *testing.T) {
 		},
 	}
 
-	frame, err := DoSignalQuery(query)
+	frame, _, err := DoSignalQuery(query)
 	dr := backend.DataResponse{
 		Frames: data.Frames{frame},
 		Error:  err,

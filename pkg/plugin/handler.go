@@ -2,6 +2,7 @@ package plugin
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/datasource"
 
@@ -28,6 +29,7 @@ func GetDatasourceServeOpts() datasource.ServeOpts {
 		CheckHealthHandler:  handler,
 		QueryDataHandler:    handler,
 		CallResourceHandler: handler,
+		StreamHandler:       handler,
 	}
 }
 
@@ -37,12 +39,7 @@ func NewServerInstance(settings backend.DataSourceInstanceSettings) (instancemgm
 		return nil, err
 	}
 	ds := NewDatasource(s)
-
-	for k, v := range ds.streams {
-		backend.Logger.Info("START streaming", "xx", k)
-		v.Start()
-	}
-
+	ds.channelPrefix = fmt.Sprintf("ds/%d/", settings.ID) // BETTER >> UID!!!
 	return ds, nil
 }
 
@@ -90,4 +87,32 @@ func (cr *DatasourceHandler) CallResource(ctx context.Context, req *backend.Call
 		return ds.CallResource(ctx, req, sender)
 	}
 	return nil
+}
+
+func (cr *DatasourceHandler) SubscribeStream(ctx context.Context, req *backend.SubscribeStreamRequest) (*backend.SubscribeStreamResponse, error) {
+	h, err := cr.im.Get(req.PluginContext)
+	if err != nil {
+		return nil, err
+	}
+	if ds, ok := h.(*Datasource); ok {
+		return ds.SubscribeStream(ctx, req)
+	}
+	return nil, dserrors.ErrorBadDatasource
+}
+
+func (cr *DatasourceHandler) RunStream(ctx context.Context, req *backend.RunStreamRequest, sender backend.StreamPacketSender) error {
+	h, err := cr.im.Get(req.PluginContext)
+	if err != nil {
+		return err
+	}
+	if ds, ok := h.(*Datasource); ok {
+		return ds.RunStream(ctx, req, sender)
+	}
+	return dserrors.ErrorBadDatasource
+}
+
+func (cr *DatasourceHandler) PublishStream(ctx context.Context, req *backend.PublishStreamRequest) (*backend.PublishStreamResponse, error) {
+	return &backend.PublishStreamResponse{
+		Status: backend.PublishStreamStatusPermissionDenied, // ?? Unsupported
+	}, nil
 }

@@ -95,12 +95,6 @@ func NewSignalStreamerFromConfig(extcfg *capture.CaptureSetConfig) (*SignalStrea
 	}
 
 	frame := data.NewFrame(extcfg.Name, fields...)
-	frame.SetMeta(&data.FrameMeta{
-		Custom: &models.CustomFrameMeta{
-			StreamKey: "signal/" + extcfg.Name,
-		},
-	})
-
 	return &SignalStreamer{
 		signal:   gen,
 		frame:    frame,

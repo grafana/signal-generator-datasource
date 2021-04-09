@@ -134,6 +134,8 @@ github.com/grafana/grafana-edge-app v0.0.0-20210323194531-d95777a136bb/go.mod h1
 github.com/grafana/grafana-plugin-sdk-go v0.88.1-0.20210316010403-be8d0c26d32a/go.mod h1:DBFk19Grc/rN2TscHkF7KzUsP1iiX7xoGJ78mwcGE3g=
 github.com/grafana/grafana-plugin-sdk-go v0.91.1-0.20210407005234-810106564a89 h1:tnzamXBShVpnbktGcrMVJUDLJdcFyK0JquH0kvILXME=
 github.com/grafana/grafana-plugin-sdk-go v0.91.1-0.20210407005234-810106564a89/go.mod h1:Ot3k7nY7P6DXmUsDgKvNB7oG1v7PRyTdmnYVoS554bU=
+github.com/grafana/grafana-plugin-sdk-go v0.91.1-0.20210408195819-266fa63c3826 h1:2jafeRCAkBtM3QWQKZ+/0HwUGKl7V4xjTxiTeXcl5nk=
+github.com/grafana/grafana-plugin-sdk-go v0.91.1-0.20210408195819-266fa63c3826/go.mod h1:Ot3k7nY7P6DXmUsDgKvNB7oG1v7PRyTdmnYVoS554bU=
 github.com/grpc-ecosystem/go-grpc-middleware v1.0.1-0.20190118093823-f849b5445de4/go.mod h1:FiyG127CGDf3tlThmgyCl78X/SZQqEOJBCDaAfeWzPs=
 github.com/grpc-ecosystem/go-grpc-middleware v1.2.2 h1:FlFbCRLd5Jr4iYXZufAvgWN6Ao0JrI5chLINnUXDDr0=
 github.com/grpc-ecosystem/go-grpc-middleware v1.2.2/go.mod h1:EaizFBKfUKtMIF5iaDEhniwNedqGo9FuLFzppDr3uwI=

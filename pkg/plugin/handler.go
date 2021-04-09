@@ -2,6 +2,7 @@ package plugin
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/datasource"
 
@@ -38,7 +39,7 @@ func NewServerInstance(settings backend.DataSourceInstanceSettings) (instancemgm
 		return nil, err
 	}
 	ds := NewDatasource(s)
-
+	ds.channelPrefix = fmt.Sprintf("ds/%d/", settings.ID) // BETTER >> UID!!!
 	return ds, nil
 }
 

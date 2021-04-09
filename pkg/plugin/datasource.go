@@ -14,8 +14,9 @@ import (
 )
 
 type Datasource struct {
-	settings *models.DatasurceSettings
-	streams  map[string]*SignalStreamer
+	settings      *models.DatasurceSettings
+	streams       map[string]*SignalStreamer
+	channelPrefix string
 }
 
 func NewDatasource(settings *models.DatasurceSettings) *Datasource {
@@ -198,9 +199,7 @@ func (ds *Datasource) doAWG(ctx context.Context, query *models.SignalQuery) (dr 
 	if query.Stream {
 		key := ds.initStream(query, gen, frame)
 		frame.SetMeta(&data.FrameMeta{
-			Custom: &models.CustomFrameMeta{
-				StreamKey: key,
-			},
+			Channel: ds.channelPrefix + key, // ds/${id}/${key}
 		})
 	}
 	dr.Frames = data.Frames{frame}

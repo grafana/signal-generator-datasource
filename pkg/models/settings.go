@@ -15,6 +15,5 @@ func GetDatasurceSettings(dsInfo backend.DataSourceInstanceSettings) (*Datasurce
 	if err := json.Unmarshal(dsInfo.JSONData, s); err != nil {
 		return nil, err
 	}
-
 	return s, nil
 }

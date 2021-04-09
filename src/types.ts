@@ -36,14 +36,6 @@ export interface SignalConfig {
   time: TimeFieldConfig;
   fields: SignalField[];
 }
-
-/**
- * Metadata attached to DataFrame results
- */
-export interface SignalCustomMeta {
-  streamKey?: string;
-}
-
 export interface SignalQuery extends DataQuery {
   queryType?: QueryType;
   signal?: SignalConfig;

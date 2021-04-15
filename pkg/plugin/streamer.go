@@ -18,7 +18,6 @@ type SignalStreamer struct {
 	interval time.Duration
 	signal   *waves.SignalGen
 	frame    *data.Frame
-	running  bool
 	init     time.Time // TODO, periodically kill non
 }
 
@@ -99,7 +98,6 @@ func NewSignalStreamerFromConfig(extcfg *capture.CaptureSetConfig) (*SignalStrea
 		signal:   gen,
 		frame:    frame,
 		interval: interval,
-		running:  false,
 		init:     time.Now(),
 	}, nil
 }
@@ -139,19 +137,15 @@ func (s *SignalStreamer) UpdateValues(props map[string]interface{}) error {
 	return nil
 }
 
-func (s *SignalStreamer) doStream(ctx context.Context, sender backend.StreamPacketSender) {
+func (s *SignalStreamer) doStream(ctx context.Context, sender backend.StreamPacketSender) error {
 	ticker := time.NewTicker(s.interval)
-	defer func() {
-		s.running = false
-		ticker.Stop()
-	}()
+	defer ticker.Stop()
 
 	paramCount := len(s.signal.Fields) + 4
 	parameters := make(map[string]interface{}, paramCount)
 	parameters["PI"] = math.Pi
 
 	backend.Logger.Info("start streaming")
-	s.running = true
 
 	// local copy
 	fields := make([]*data.Field, len(s.frame.Fields))
@@ -164,7 +158,7 @@ func (s *SignalStreamer) doStream(ctx context.Context, sender backend.StreamPack
 		select {
 		case <-ctx.Done():
 			backend.Logger.Info("stop streaming (context canceled)")
-			return
+			return nil
 		case t := <-ticker.C:
 			frame.Fields[0].Set(0, t)
 
@@ -190,17 +184,18 @@ func (s *SignalStreamer) doStream(ctx context.Context, sender backend.StreamPack
 
 			bytes, err := data.FrameToJSON(frame, false, true)
 			if err != nil {
-				backend.Logger.Warn("error writing json data", "error", err)
-				continue // return?  kills tream?
+				backend.Logger.Warn("error marshaling frame to JSON", "error", err)
+				continue
 			}
 			packet := &backend.StreamPacket{
-				Data: bytes, // data and schema every time :(
+				Data: bytes,
 			}
 
 			err = sender.Send(packet)
 			if err != nil {
-				backend.Logger.Warn("unable to send data", "error", err)
-				continue
+				backend.Logger.Warn("Unable to send data", "error", err)
+				// Broken stream? Return an error, stream should be re-established soon.
+				return err
 			}
 		}
 	}

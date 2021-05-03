@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/grafana/grafana-plugin-sdk-go/backend/datasource"
-
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/datasource"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
+
 	dserrors "github.com/grafana/signal-generator-datasource/pkg/errors"
 	"github.com/grafana/signal-generator-datasource/pkg/models"
 )
@@ -34,7 +34,7 @@ func GetDatasourceServeOpts() datasource.ServeOpts {
 }
 
 func NewServerInstance(settings backend.DataSourceInstanceSettings) (instancemgmt.Instance, error) {
-	s, err := models.GetDatasurceSettings(settings)
+	s, err := models.GetDatasourceSettings(settings)
 	if err != nil {
 		return nil, err
 	}

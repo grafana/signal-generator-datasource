@@ -6,12 +6,12 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 )
 
-type DatasurceSettings struct {
+type DatasourceSettings struct {
 	// global settings
 }
 
-func GetDatasurceSettings(dsInfo backend.DataSourceInstanceSettings) (*DatasurceSettings, error) {
-	s := &DatasurceSettings{}
+func GetDatasourceSettings(dsInfo backend.DataSourceInstanceSettings) (*DatasourceSettings, error) {
+	s := &DatasourceSettings{}
 	if err := json.Unmarshal(dsInfo.JSONData, s); err != nil {
 		return nil, err
 	}

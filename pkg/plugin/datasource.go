@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/grafana/grafana-edge-app/pkg/actions"
@@ -14,12 +15,13 @@ import (
 )
 
 type Datasource struct {
-	settings      *models.DatasurceSettings
+	mu            sync.RWMutex
+	settings      *models.DatasourceSettings
 	streams       map[string]*SignalStreamer
 	channelPrefix string
 }
 
-func NewDatasource(settings *models.DatasurceSettings) *Datasource {
+func NewDatasource(settings *models.DatasourceSettings) *Datasource {
 	return &Datasource{
 		settings: settings,
 		streams:  make(map[string]*SignalStreamer),
@@ -27,6 +29,8 @@ func NewDatasource(settings *models.DatasurceSettings) *Datasource {
 }
 
 func (ds *Datasource) ExecuteAction(ctx context.Context, cmd actions.ActionCommand) actions.ActionResponse {
+	ds.mu.RLock()
+	defer ds.mu.RUnlock()
 	s, ok := ds.streams[cmd.Path]
 	if !ok {
 		keys := make([]string, 0, len(ds.streams))
@@ -63,28 +67,9 @@ func (ds *Datasource) ExecuteAction(ctx context.Context, cmd actions.ActionComma
 }
 
 func (ds *Datasource) CallResource(ctx context.Context, req *backend.CallResourceRequest, sender backend.CallResourceResponseSender) error {
-
-	// cmd := &actions.ActionCommand{}
-	// if err := json.Unmarshal(req.Body, cmd); err != nil {
-	// 	return err
-	// }
-
-	// for _, action := range cmd.Write {
-	// 	if action.Path == "stream.start" {
-	// 		backend.Logger.Info("START!!!")
-	// 		ds.streamer.Start()
-	// 	} else if action.Path == "stream.stop" {
-	// 		backend.Logger.Info("STOP!!!")
-	// 		ds.streamer.Stop()
-	// 	} else {
-	// 		backend.Logger.Info("???????????????")
-	// 	}
-	// }
-
 	if req.Path == "action" {
 		return actions.DoActionCommand(ctx, req, ds, sender)
 	}
-
 	return sender.Send(&backend.CallResourceResponse{
 		Status: http.StatusOK,
 		Body:   []byte("OK"),
@@ -92,6 +77,9 @@ func (ds *Datasource) CallResource(ctx context.Context, req *backend.CallResourc
 }
 
 func (ds *Datasource) HealthCheck(ctx context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
+	ds.mu.RLock()
+	defer ds.mu.RUnlock()
+
 	streamCount := 0
 	fieldCount := 0
 
@@ -181,21 +169,27 @@ func (ds *Datasource) doQuery(ctx context.Context, query *models.SignalQuery) ba
 
 func (ds *Datasource) initStream(query *models.SignalQuery, gen *waves.SignalGen, frame *data.Frame) string {
 	key := models.GetStreamKey(query)
+
+	ds.mu.Lock()
+	defer ds.mu.Unlock()
 	_, ok := ds.streams[key]
 	if !ok {
 		ds.streams[key] = &SignalStreamer{
 			interval: query.Interval,
 			signal:   gen,
 			frame:    frame.EmptyCopy(),
-			running:  false,
 			init:     time.Now(),
 		}
 	}
 	return key
 }
 
-func (ds *Datasource) doAWG(ctx context.Context, query *models.SignalQuery) (dr backend.DataResponse) {
+func (ds *Datasource) doAWG(_ context.Context, query *models.SignalQuery) (dr backend.DataResponse) {
 	frame, gen, err := waves.DoSignalQuery(query)
+	if err != nil {
+		dr.Error = err
+		return
+	}
 	if query.Stream {
 		key := ds.initStream(query, gen, frame)
 		frame.SetMeta(&data.FrameMeta{
@@ -208,6 +202,9 @@ func (ds *Datasource) doAWG(ctx context.Context, query *models.SignalQuery) (dr 
 }
 
 func (ds *Datasource) SubscribeStream(_ context.Context, req *backend.SubscribeStreamRequest) (*backend.SubscribeStreamResponse, error) {
+	ds.mu.RLock()
+	defer ds.mu.RUnlock()
+
 	s, ok := ds.streams[req.Path]
 	if s == nil || !ok {
 		return &backend.SubscribeStreamResponse{
@@ -228,16 +225,22 @@ func (ds *Datasource) SubscribeStream(_ context.Context, req *backend.SubscribeS
 }
 
 func (ds *Datasource) RunStream(ctx context.Context, req *backend.RunStreamRequest, sender backend.StreamPacketSender) error {
+	ds.mu.RLock()
 	s, ok := ds.streams[req.Path]
 	if s == nil || !ok {
-		return nil // or error?
+		ds.mu.RUnlock()
+		// Return nil to stop RunStream till next subscriber. Any error here
+		// will result into RunStream re-establishment.
+		return nil
 	}
+	ds.mu.RUnlock()
 
-	// When the stream is done, remove it
+	// When the stream is done, remove it.
 	defer func() {
+		ds.mu.Lock()
+		defer ds.mu.Unlock()
 		delete(ds.streams, req.Path)
 	}()
 
-	s.doStream(ctx, sender)
-	return nil
+	return s.doStream(ctx, sender)
 }

@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	fpath := "/home/ryan/Downloads/archer-sample-data.log"
+	fpath := "/home/ryan/Downloads/influx-sample-data.log"
 	url := "ws://localhost:3000/api/live/push?gf_live_stream=telegraf&frameFormat=labels_column"
 	key := "eyJrIjoicExKYjlEN29yQmlrMEg4YmtodlRFSjN6R0FOUjRLMEQiLCJuIjoicHVibGlzaCIsImlkIjoxfQ=="
 

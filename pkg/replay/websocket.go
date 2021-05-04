@@ -17,6 +17,7 @@ const (
 )
 
 // WebSocket can output to WebSocket endpoint.
+// This is a direct copy of the telegraf websocket output plugin
 type WebSocket struct {
 	URL            string            `toml:"url"`
 	ConnectTimeout time.Duration     `toml:"connect_timeout"`

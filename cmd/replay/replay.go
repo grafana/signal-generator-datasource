@@ -1,14 +1,14 @@
 package main
 
 import (
-	"fmt"
+	"time"
 
 	"github.com/grafana/signal-generator-datasource/pkg/replay"
 )
 
 func main() {
 	fpath := "/home/ryan/Downloads/archer-sample-data.log"
-	url := "ws://localhost:3000/api/live/push?gf_live_stream=telegraf"
+	url := "ws://localhost:3000/api/live/push?gf_live_stream=telegraf&gf_live_frame_format=labels_column"
 	key := "eyJrIjoicExKYjlEN29yQmlrMEg4YmtodlRFSjN6R0FOUjRLMEQiLCJuIjoicHVibGlzaCIsImlkIjoxfQ=="
 
 	ws := replay.NewWebSocket(url)
@@ -20,6 +20,6 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Printf("hello! %s,%s,%s", fpath, url, key)
-	replay.DoReplay(fpath, ws.Write)
+	interval := 50 * time.Millisecond
+	replay.DoReplay(fpath, interval, ws.Write)
 }

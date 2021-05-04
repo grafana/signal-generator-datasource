@@ -12,7 +12,7 @@ import (
 
 type Replayer func(messageData []byte) error
 
-func DoReplay(fpath string, interval time.Duration, player Replayer) {
+func ReplayInfluxLog(fpath string, interval time.Duration, player Replayer) int {
 	file, err := os.Open(fpath)
 	if err != nil {
 		log.Fatal(err)
@@ -29,7 +29,6 @@ func DoReplay(fpath string, interval time.Duration, player Replayer) {
 
 	// All lines in the path
 	batch := ""
-	batchCount := 0
 	row := 0
 
 	fmt.Printf("STREAMING: %s\n\n", fpath)
@@ -42,7 +41,6 @@ func DoReplay(fpath string, interval time.Duration, player Replayer) {
 			continue
 		}
 
-		row++
 		timestamp, err := strconv.ParseInt(line[(idx+1):], 10, 64)
 		if err != nil {
 			fmt.Printf("error parsing: %s [%s]\n", line, err.Error())
@@ -81,18 +79,28 @@ func DoReplay(fpath string, interval time.Duration, player Replayer) {
 					fmt.Printf("error writing: %s\n", err.Error())
 				}
 
+				lastTime = timestamp
+				batch = ""
+
 				time.Sleep(time.Nanosecond * time.Duration(delta))
 			}
 
-			lastTime = timestamp
-			batch = ""
-			batchCount = 0
 		}
 		batch += fmt.Sprintf("%s %d\n", line[:idx], timestamp+offsetTime)
-		batchCount++
+		row++
+	}
+
+	// Flush the final messages
+	if len(batch) > 0 {
+		err = player([]byte(batch))
+		if err != nil {
+			fmt.Printf("error writing: %s\n", err.Error())
+		}
 	}
 
 	if err := scanner.Err(); err != nil {
 		log.Fatal(err)
 	}
+
+	return row
 }

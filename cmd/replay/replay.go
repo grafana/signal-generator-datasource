@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/grafana/signal-generator-datasource/pkg/replay"
@@ -8,7 +9,7 @@ import (
 
 func main() {
 	fpath := "/home/ryan/Downloads/archer-sample-data.log"
-	url := "ws://localhost:3000/api/live/push?gf_live_stream=telegraf&gf_live_frame_format=labels_column"
+	url := "ws://localhost:3000/api/live/push?gf_live_stream=telegraf"
 	key := "eyJrIjoicExKYjlEN29yQmlrMEg4YmtodlRFSjN6R0FOUjRLMEQiLCJuIjoicHVibGlzaCIsImlkIjoxfQ=="
 
 	ws := replay.NewWebSocket(url)
@@ -21,5 +22,6 @@ func main() {
 	}
 
 	interval := 50 * time.Millisecond
-	replay.DoReplay(fpath, interval, ws.Write)
+	count := replay.ReplayInfluxLog(fpath, interval, ws.Write)
+	fmt.Printf("wrote: %d lines.\n", count)
 }

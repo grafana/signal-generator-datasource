@@ -9,7 +9,7 @@ import (
 
 func main() {
 	fpath := "/home/ryan/Downloads/archer-sample-data.log"
-	url := "ws://localhost:3000/api/live/push?gf_live_stream=telegraf"
+	url := "ws://localhost:3000/api/live/push?gf_live_stream=telegraf&frameFormat=labels_column"
 	key := "eyJrIjoicExKYjlEN29yQmlrMEg4YmtodlRFSjN6R0FOUjRLMEQiLCJuIjoicHVibGlzaCIsImlkIjoxfQ=="
 
 	ws := replay.NewWebSocket(url)

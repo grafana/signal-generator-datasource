@@ -2,19 +2,34 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/grafana/signal-generator-datasource/pkg/replay"
 )
 
+// go run cmd/replay/replay.go /home/ryan/Downloads/influx-sample-data.log "ws://localhost:3000/api/live/push/telegraf?gf_live_frame_format=labels_column" "eyJrIjoicExKYjlEN29yQmlrMEg4YmtodlRFSjN6R0FOUjRLMEQiLCJuIjoicHVibGlzaCIsImlkIjoxfQ=="
+
 func main() {
-	fpath := "/home/ryan/Downloads/influx-sample-data.log"
-	url := "ws://localhost:3000/api/live/push/telegraf?gf_live_frame_format=labels_column"
-	key := "eyJrIjoicExKYjlEN29yQmlrMEg4YmtodlRFSjN6R0FOUjRLMEQiLCJuIjoicHVibGlzaCIsImlkIjoxfQ=="
+	if len(os.Args) < 3 {
+		fmt.Printf("Expected:\n")
+		fmt.Printf("%s {path} {url} {key}\n", os.Args[0])
+		return
+	}
+
+	fpath := os.Args[1]
+	url := os.Args[2]
+
+	// fpath := "/home/ryan/Downloads/influx-sample-data.log"
+	// url := "ws://localhost:3000/api/live/push/telegraf?gf_live_frame_format=labels_column"
+	// key := "eyJrIjoicExKYjlEN29yQmlrMEg4YmtodlRFSjN6R0FOUjRLMEQiLCJuIjoicHVibGlzaCIsImlkIjoxfQ=="
 
 	ws := replay.NewWebSocket(url)
-	ws.Headers = map[string]string{
-		"Authorization": "Bearer " + key,
+
+	if len(os.Args) > 3 {
+		ws.Headers = map[string]string{
+			"Authorization": "Bearer " + os.Args[3],
+		}
 	}
 	err := ws.Connect()
 	if err != nil {

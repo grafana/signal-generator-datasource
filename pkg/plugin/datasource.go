@@ -7,7 +7,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/grafana/grafana-edge-app/pkg/actions"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/grafana/signal-generator-datasource/pkg/models"
@@ -28,47 +27,51 @@ func NewDatasource(settings *models.DatasourceSettings) *Datasource {
 	}
 }
 
-func (ds *Datasource) ExecuteAction(ctx context.Context, cmd actions.ActionCommand) actions.ActionResponse {
-	ds.mu.RLock()
-	defer ds.mu.RUnlock()
-	s, ok := ds.streams[cmd.Path]
-	if !ok {
-		keys := make([]string, 0, len(ds.streams))
-		for k := range ds.streams {
-			keys = append(keys, k)
-		}
+// func (ds *Datasource) ExecuteAction(ctx context.Context, cmd actions.ActionCommand) actions.ActionResponse {
+// 	ds.mu.RLock()
+// 	defer ds.mu.RUnlock()
+// 	s, ok := ds.streams[cmd.Path]
+// 	if !ok {
+// 		keys := make([]string, 0, len(ds.streams))
+// 		for k := range ds.streams {
+// 			keys = append(keys, k)
+// 		}
 
-		return actions.ActionResponse{
-			Code:  http.StatusBadRequest,
-			Error: fmt.Sprintf("'%s' not found in: %v", cmd.Path, keys),
-		}
-	}
+// 		return actions.ActionResponse{
+// 			Code:  http.StatusBadRequest,
+// 			Error: fmt.Sprintf("'%s' not found in: %v", cmd.Path, keys),
+// 		}
+// 	}
 
-	vmap, ok := cmd.Value.(map[string]interface{})
-	if !ok {
-		return actions.ActionResponse{
-			Code:  http.StatusBadRequest,
-			Error: "value must be a map",
-		}
-	}
+// 	vmap, ok := cmd.Value.(map[string]interface{})
+// 	if !ok {
+// 		return actions.ActionResponse{
+// 			Code:  http.StatusBadRequest,
+// 			Error: "value must be a map",
+// 		}
+// 	}
 
-	err := s.UpdateValues(vmap)
-	if err != nil {
-		return actions.ActionResponse{
-			Code:  http.StatusBadRequest,
-			Error: err.Error(),
-		}
-	}
+// 	err := s.UpdateValues(vmap)
+// 	if err != nil {
+// 		return actions.ActionResponse{
+// 			Code:  http.StatusBadRequest,
+// 			Error: err.Error(),
+// 		}
+// 	}
 
-	return actions.ActionResponse{
-		Code:  http.StatusOK,
-		State: s.frame,
-	}
-}
+// 	return actions.ActionResponse{
+// 		Code:  http.StatusOK,
+// 		State: s.frame,
+// 	}
+// }
 
 func (ds *Datasource) CallResource(ctx context.Context, req *backend.CallResourceRequest, sender backend.CallResourceResponseSender) error {
 	if req.Path == "action" {
-		return actions.DoActionCommand(ctx, req, ds, sender)
+		//return actions.DoActionCommand(ctx, req, ds, sender)
+		return sender.Send(&backend.CallResourceResponse{
+			Status: http.StatusNotFound,
+			Body:   []byte("not implemented yet"),
+		})
 	}
 	return sender.Send(&backend.CallResourceResponse{
 		Status: http.StatusOK,

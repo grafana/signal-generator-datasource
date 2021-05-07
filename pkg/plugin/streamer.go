@@ -2,14 +2,11 @@ package plugin
 
 import (
 	"context"
-	"fmt"
 	"math"
 	"time"
 
-	"github.com/grafana/grafana-edge-app/pkg/capture"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
-	"github.com/grafana/signal-generator-datasource/pkg/models"
 	"github.com/grafana/signal-generator-datasource/pkg/waves"
 )
 
@@ -21,86 +18,86 @@ type SignalStreamer struct {
 	init     time.Time // TODO, periodically kill non
 }
 
-func NewSignalStreamerFromConfig(extcfg *capture.CaptureSetConfig) (*SignalStreamer, error) {
-	cfg := models.SignalConfig{
-		Time: models.TimeFieldConfig{
-			Period: "5s",
-		},
-		Fields: []models.ExpressionConfig{},
-	}
+// func NewSignalStreamerFromConfig(extcfg *capture.CaptureSetConfig) (*SignalStreamer, error) {
+// 	cfg := models.SignalConfig{
+// 		Time: models.TimeFieldConfig{
+// 			Period: "5s",
+// 		},
+// 		Fields: []models.ExpressionConfig{},
+// 	}
 
-	interval := time.Second * 2 // 2s
-	if extcfg.Interval != "" {
-		d, err := time.ParseDuration(extcfg.Interval)
-		if err == nil {
-			interval = d
-		}
-	}
+// 	interval := time.Second * 2 // 2s
+// 	if extcfg.Interval != "" {
+// 		d, err := time.ParseDuration(extcfg.Interval)
+// 		if err == nil {
+// 			interval = d
+// 		}
+// 	}
 
-	for idx := range extcfg.Input {
-		tag := extcfg.Input[idx]
-		if tag.Path == "time" {
-			// TODO... configure the time period
-			continue
-		}
-		name := tag.Name
-		if len(name) < 1 {
-			name = tag.Path
-		}
+// 	for idx := range extcfg.Input {
+// 		tag := extcfg.Input[idx]
+// 		if tag.Path == "time" {
+// 			// TODO... configure the time period
+// 			continue
+// 		}
+// 		name := tag.Name
+// 		if len(name) < 1 {
+// 			name = tag.Path
+// 		}
 
-		if len(name) < 1 {
-			return nil, fmt.Errorf("invalid field name for tag: %v", tag)
-		}
+// 		if len(name) < 1 {
+// 			return nil, fmt.Errorf("invalid field name for tag: %v", tag)
+// 		}
 
-		if len(tag.Path) > 1 {
-			tag.Config.Path = tag.Path
-		}
+// 		if len(tag.Path) > 1 {
+// 			tag.Config.Path = tag.Path
+// 		}
 
-		if tag.Value == nil || tag.Value == "" {
-			return nil, fmt.Errorf("missing value for field: %s", tag.Path)
-		}
+// 		if tag.Value == nil || tag.Value == "" {
+// 			return nil, fmt.Errorf("missing value for field: %s", tag.Path)
+// 		}
 
-		ft := tag.FieldType
-		if ft == data.FieldTypeUnknown {
-			ft = data.FieldTypeFloat64 // the default
-		}
+// 		ft := tag.FieldType
+// 		if ft == data.FieldTypeUnknown {
+// 			ft = data.FieldTypeFloat64 // the default
+// 		}
 
-		cfg.Fields = append(cfg.Fields, models.ExpressionConfig{
-			BaseSignalField: models.BaseSignalField{
-				Name:   name,
-				Config: &tag.Config,
-				Labels: tag.Labels,
-			},
-			Expr:     fmt.Sprintf("%v", tag.Value),
-			DataType: ft,
-		})
-	}
+// 		cfg.Fields = append(cfg.Fields, models.ExpressionConfig{
+// 			BaseSignalField: models.BaseSignalField{
+// 				Name:   name,
+// 				Config: &tag.Config,
+// 				Labels: tag.Labels,
+// 			},
+// 			Expr:     fmt.Sprintf("%v", tag.Value),
+// 			DataType: ft,
+// 		})
+// 	}
 
-	gen, err := waves.NewSignalGenerator(cfg)
-	if err != nil {
-		return nil, err
-	}
+// 	gen, err := waves.NewSignalGenerator(cfg)
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	rowCount := 1
-	fields := make([]*data.Field, len(gen.Fields)+1)
-	fields[0] = data.NewFieldFromFieldType(data.FieldTypeTime, rowCount)
-	fields[0].Name = "Time"
-	for i, f := range gen.Fields {
-		cfg := f.GetConfig()
-		fields[i+1] = data.NewFieldFromFieldType(cfg.DataType, rowCount)
-		fields[i+1].Name = cfg.Name
-		fields[i+1].Config = cfg.Config
-		fields[i+1].Labels = cfg.Labels
-	}
+// 	rowCount := 1
+// 	fields := make([]*data.Field, len(gen.Fields)+1)
+// 	fields[0] = data.NewFieldFromFieldType(data.FieldTypeTime, rowCount)
+// 	fields[0].Name = "Time"
+// 	for i, f := range gen.Fields {
+// 		cfg := f.GetConfig()
+// 		fields[i+1] = data.NewFieldFromFieldType(cfg.DataType, rowCount)
+// 		fields[i+1].Name = cfg.Name
+// 		fields[i+1].Config = cfg.Config
+// 		fields[i+1].Labels = cfg.Labels
+// 	}
 
-	frame := data.NewFrame(extcfg.Name, fields...)
-	return &SignalStreamer{
-		signal:   gen,
-		frame:    frame,
-		interval: interval,
-		init:     time.Now(),
-	}, nil
-}
+// 	frame := data.NewFrame(extcfg.Name, fields...)
+// 	return &SignalStreamer{
+// 		signal:   gen,
+// 		frame:    frame,
+// 		interval: interval,
+// 		init:     time.Now(),
+// 	}, nil
+// }
 
 func (s *SignalStreamer) UpdateValues(props map[string]interface{}) error {
 	err := s.signal.UpdateValues(props)

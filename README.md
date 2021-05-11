@@ -1,4 +1,7 @@
 # Signal Generator
 
-Streaming test datasource
 
+WIP: streaming data generator
+
+
+![siggen](./docs/signal-generator.png)

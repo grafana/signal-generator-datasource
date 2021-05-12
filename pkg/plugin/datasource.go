@@ -8,7 +8,9 @@ import (
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/actions"
 	"github.com/grafana/signal-generator-datasource/pkg/models"
 	"github.com/grafana/signal-generator-datasource/pkg/waves"
 )
@@ -18,52 +20,79 @@ type Datasource struct {
 	settings      *models.DatasourceSettings
 	streams       map[string]*SignalStreamer
 	channelPrefix string
+	closeCh       chan struct{}
 }
 
-func NewDatasource(settings *models.DatasourceSettings) *Datasource {
+// Make sure SampleDatasource implements required interfaces.
+// This is important to do since otherwise we will only get a
+// not implemented error response from plugin in runtime.
+var (
+	_ backend.QueryDataHandler      = (*Datasource)(nil)
+	_ backend.CheckHealthHandler    = (*Datasource)(nil)
+	_ backend.StreamHandler         = (*Datasource)(nil)
+	_ backend.CallResourceHandler   = (*Datasource)(nil)
+	_ instancemgmt.InstanceDisposer = (*Datasource)(nil)
+)
+
+// NewMQTTDatasource creates a new datasource instance.
+func NewDatasource(s backend.DataSourceInstanceSettings) (instancemgmt.Instance, error) {
+	settings, err := models.GetDatasourceSettings(s)
+	if err != nil {
+		return nil, err
+	}
 	return &Datasource{
-		settings: settings,
-		streams:  make(map[string]*SignalStreamer),
+		settings:      settings,
+		streams:       make(map[string]*SignalStreamer),
+		channelPrefix: fmt.Sprintf("ds/%d/", s.ID),
+		closeCh:       make(chan struct{}),
+	}, nil
+}
+
+// Dispose here tells plugin SDK that plugin wants to clean up resources
+// when a new instance created. As soon as datasource settings change detected
+// by SDK old datasource instance will be disposed and a new one will be created
+// using NewSampleDatasource factory function.
+func (ds *Datasource) Dispose() {
+	close(ds.closeCh)
+}
+
+func (ds *Datasource) ExecuteAction(ctx context.Context, cmd actions.ActionCommand) actions.ActionResponse {
+	ds.mu.RLock()
+	defer ds.mu.RUnlock()
+	s, ok := ds.streams[cmd.Path]
+	if !ok {
+		keys := make([]string, 0, len(ds.streams))
+		for k := range ds.streams {
+			keys = append(keys, k)
+		}
+
+		return actions.ActionResponse{
+			Code:  http.StatusBadRequest,
+			Error: fmt.Sprintf("'%s' not found in: %v", cmd.Path, keys),
+		}
+	}
+
+	vmap, ok := cmd.Value.(map[string]interface{})
+	if !ok {
+		return actions.ActionResponse{
+			Code:  http.StatusBadRequest,
+			Error: "value must be a map",
+		}
+	}
+
+	err := s.UpdateValues(vmap)
+	if err != nil {
+		return actions.ActionResponse{
+			Code:  http.StatusBadRequest,
+			Error: err.Error(),
+		}
+	}
+
+	return actions.ActionResponse{
+		Code:  http.StatusOK,
+		State: s.frame,
 	}
 }
-
-// func (ds *Datasource) ExecuteAction(ctx context.Context, cmd actions.ActionCommand) actions.ActionResponse {
-// 	ds.mu.RLock()
-// 	defer ds.mu.RUnlock()
-// 	s, ok := ds.streams[cmd.Path]
-// 	if !ok {
-// 		keys := make([]string, 0, len(ds.streams))
-// 		for k := range ds.streams {
-// 			keys = append(keys, k)
-// 		}
-
-// 		return actions.ActionResponse{
-// 			Code:  http.StatusBadRequest,
-// 			Error: fmt.Sprintf("'%s' not found in: %v", cmd.Path, keys),
-// 		}
-// 	}
-
-// 	vmap, ok := cmd.Value.(map[string]interface{})
-// 	if !ok {
-// 		return actions.ActionResponse{
-// 			Code:  http.StatusBadRequest,
-// 			Error: "value must be a map",
-// 		}
-// 	}
-
-// 	err := s.UpdateValues(vmap)
-// 	if err != nil {
-// 		return actions.ActionResponse{
-// 			Code:  http.StatusBadRequest,
-// 			Error: err.Error(),
-// 		}
-// 	}
-
-// 	return actions.ActionResponse{
-// 		Code:  http.StatusOK,
-// 		State: s.frame,
-// 	}
-// }
 
 func (ds *Datasource) CallResource(ctx context.Context, req *backend.CallResourceRequest, sender backend.CallResourceResponseSender) error {
 	if req.Path == "action" {
@@ -79,7 +108,7 @@ func (ds *Datasource) CallResource(ctx context.Context, req *backend.CallResourc
 	})
 }
 
-func (ds *Datasource) HealthCheck(ctx context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
+func (ds *Datasource) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
 	ds.mu.RLock()
 	defer ds.mu.RUnlock()
 
@@ -221,9 +250,8 @@ func (ds *Datasource) SubscribeStream(_ context.Context, req *backend.SubscribeS
 	}
 
 	return &backend.SubscribeStreamResponse{
-		Status:       backend.SubscribeStreamStatusOK,
-		UseRunStream: true,
-		Data:         bytes, // just the schema
+		Status: backend.SubscribeStreamStatusOK,
+		Data:   bytes, // just the schema
 	}, nil
 }
 
@@ -246,4 +274,10 @@ func (ds *Datasource) RunStream(ctx context.Context, req *backend.RunStreamReque
 	}()
 
 	return s.doStream(ctx, sender)
+}
+
+func (ds *Datasource) PublishStream(ctx context.Context, req *backend.PublishStreamRequest) (*backend.PublishStreamResponse, error) {
+	return &backend.PublishStreamResponse{
+		Status: backend.PublishStreamStatusPermissionDenied, // ?? Unsupported
+	}, nil
 }

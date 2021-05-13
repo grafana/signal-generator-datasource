@@ -3,17 +3,14 @@ package main
 import (
 	"os"
 
-	"github.com/grafana/grafana-plugin-sdk-go/backend"
-	"github.com/grafana/grafana-plugin-sdk-go/experimental"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/datasource"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/grafana/signal-generator-datasource/pkg/plugin"
 )
 
 func main() {
-	err := experimental.DoGRPC("signal-generator-datasource", plugin.GetDatasourceServeOpts())
-
-	// Log any error if we could start the plugin.
-	if err != nil {
-		backend.Logger.Error(err.Error())
+	if err := datasource.Manage("signal-generator-datasource", plugin.NewDatasource, datasource.ManageOpts{}); err != nil {
+		log.DefaultLogger.Error(err.Error())
 		os.Exit(1)
 	}
 }

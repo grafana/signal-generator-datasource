@@ -1042,12 +1042,12 @@
 
 "@grafana/aws-sdk@0.0.3":
   version "0.0.3"
-  resolved "https://npm.pkg.github.com/download/@grafana/aws-sdk/0.0.3/716ea62353eebdae8ce198b95aa6f4fb9868b3c0f8b6db84c0b7e2be9e751fbf#bc632c6c77971a5474acbe45847420503679fc75"
+  resolved "https://registry.yarnpkg.com/@grafana/aws-sdk/-/aws-sdk-0.0.3.tgz#bc632c6c77971a5474acbe45847420503679fc75"
   integrity sha512-V0PJLk+oU1C33knurXp8BkT5N2ctDu9b21zpK16vkJAs5aOiH/OaOhQ/IP9ipxYhB+b9PFjr8RXagV/8XJ8xwg==
 
 "@grafana/data@8.0.0-beta.1":
   version "8.0.0-beta.1"
-  resolved "https://npm.pkg.github.com/download/@grafana/data/8.0.0-beta.1/f04b56ee0e46c02aadeb8c442234b5a10370f3de798be8026bcaa875dc0e44d1#72c3d903e30dbcd223a7f94a26f85f081a38514b"
+  resolved "https://registry.yarnpkg.com/@grafana/data/-/data-8.0.0-beta.1.tgz#72c3d903e30dbcd223a7f94a26f85f081a38514b"
   integrity sha512-nmGgH4CGXlS/d9tUrGTaFFfizDUKK6+loZKIOG+f6N6teOIUmFc/QODruEz+1hGi+xAPTaAvgGbQeWP4U7ZRcw==
   dependencies:
     "@braintree/sanitize-url" "5.0.1"
@@ -1060,7 +1060,7 @@
 
 "@grafana/e2e-selectors@8.0.0-beta.1":
   version "8.0.0-beta.1"
-  resolved "https://npm.pkg.github.com/download/@grafana/e2e-selectors/8.0.0-beta.1/f1aa08afa9c15f3056797eb661d7dc71775d3e4ec17d2d48cae06990de9c208c#a0cbeddc010e095c18dc3e32f02780a9164c751d"
+  resolved "https://registry.yarnpkg.com/@grafana/e2e-selectors/-/e2e-selectors-8.0.0-beta.1.tgz#a0cbeddc010e095c18dc3e32f02780a9164c751d"
   integrity sha512-BNbfG+A4XgsMe0AjC3vc/QyzPqIBR6FLcRGHRVy71pbJv/UMt8pzIKqMivFr+7wLq/77wXqrr44/mhgXHSFQ3A==
   dependencies:
     "@grafana/tsconfig" "^1.0.0-rc1"
@@ -1071,8 +1071,8 @@
 
 "@grafana/eslint-config@2.4.0":
   version "2.4.0"
-  resolved "https://npm.pkg.github.com/download/@grafana/eslint-config/2.4.0/85d995b331001dce98dbc670fbf9df807fbfd3a2750ff2ed6f84386515e4db29#7bf91230d01c506e683aae9b63b69b9dd89897e7"
-  integrity sha512-1T+yhRrbLWlwJRwCPmkACsZ4MC79zNgmnpkche9zOlQPydB+cmZqZw7TVX0mCkcJBWpL0670m6/A9vMJZkq+Iw==
+  resolved "https://registry.yarnpkg.com/@grafana/eslint-config/-/eslint-config-2.4.0.tgz#a47125fba7f45f10c8c34affcf16fddf3eda12f2"
+  integrity sha512-2JpznkGDdiCXExo0YR2iWhP7sOWHRSom/bdg6hJVAAqFH64uFwgtuCs5t9BW73PD912Bkja5ailiuvQKl5J97A==
   dependencies:
     "@typescript-eslint/eslint-plugin" "4.22.0"
     "@typescript-eslint/parser" "4.22.0"
@@ -1087,7 +1087,7 @@
 
 "@grafana/runtime@8.0.0-beta.1":
   version "8.0.0-beta.1"
-  resolved "https://npm.pkg.github.com/download/@grafana/runtime/8.0.0-beta.1/7d5d826694c03208c415685572fb8e14ab5ce8cfa0718c28a843425f4b888920#218a4156ebb2e3b93b22f92c73c95549653f9ae1"
+  resolved "https://registry.yarnpkg.com/@grafana/runtime/-/runtime-8.0.0-beta.1.tgz#218a4156ebb2e3b93b22f92c73c95549653f9ae1"
   integrity sha512-8ijZRR7Zb3OLFTwVkrJvmUM5kDa5tpJeHEZ+pwpLbypfT6VT0icbZXS/ne5pInM8OPXGNV7uf+M/c0/fstz2eA==
   dependencies:
     "@grafana/data" "8.0.0-beta.1"
@@ -1099,8 +1099,8 @@
 
 "@grafana/slate-react@0.22.10-grafana":
   version "0.22.10-grafana"
-  resolved "https://npm.pkg.github.com/download/@grafana/slate-react/0.22.10-grafana/3459f3f54e765c24050231c4a1f026dd9e8399257c1f28715c37171337c9b437#fa64ce769941a64bd877f812b357a855c3d5454b"
-  integrity sha512-dsKRQKTr/oasZSevnB2fN1O5STeTluek8LeoQIzECpoIkqdx8l/GMNvX2jcRaFwe1G5WWKKrf+4Th+lINF1dKw==
+  resolved "https://registry.yarnpkg.com/@grafana/slate-react/-/slate-react-0.22.10-grafana.tgz#53653bbef73530334a2db284129ccd0dfd682fef"
+  integrity sha512-Dl/Nfft7i6enS1ToWUInv7V3L5UhhtpIdRln+967f5roj+cI+enqOhpP0HY+4rAp6XW0qUVRujqc30KJKID3jg==
   dependencies:
     debug "^3.1.0"
     get-window "^1.1.1"
@@ -1121,7 +1121,7 @@
 
 "@grafana/toolkit@8.0.0-beta.1":
   version "8.0.0-beta.1"
-  resolved "https://npm.pkg.github.com/download/@grafana/toolkit/8.0.0-beta.1/3c58752b873da7c90dfc619c0be0b04b6b6cae0f2ade4bf05a1eaa8cf61eb6e8#15d869a12f6fce8c9409aedd09f4c025a218ea31"
+  resolved "https://registry.yarnpkg.com/@grafana/toolkit/-/toolkit-8.0.0-beta.1.tgz#15d869a12f6fce8c9409aedd09f4c025a218ea31"
   integrity sha512-ZRNmw753PsK2sagRTAIJPL+PNmt6jVtl6nYDcDjthWiHZAArWOY6eTLQ3iox4Hpk8vDawVafCWEHZ4chkGFyNA==
   dependencies:
     "@babel/core" "7.13.14"
@@ -1208,12 +1208,12 @@
 
 "@grafana/tsconfig@^1.0.0-rc1":
   version "1.0.0-rc1"
-  resolved "https://npm.pkg.github.com/download/@grafana/tsconfig/1.0.0-rc1/ec74da3d2ff8cb1fbd24b31fadeb6fca33fcd463748454753929ca5693bc595d#6c4fa7467497f334359d001455eb0fd1427138f4"
-  integrity sha512-59noTHqQdYKPzpd4P6Rp/+3aIsA2eqxpu5v6LuwhV9QlEwsZRY0HTyEqO0PAyJes4C8Mry01qBHI6NpAbd8LiQ==
+  resolved "https://registry.yarnpkg.com/@grafana/tsconfig/-/tsconfig-1.0.0-rc1.tgz#d07ea16755a50cae21000113f30546b61647a200"
+  integrity sha512-nucKPGyzlSKYSiJk5RA8GzMdVWhdYNdF+Hh65AXxjD9PlY69JKr5wANj8bVdQboag6dgg0BFKqgKPyY+YtV4Iw==
 
 "@grafana/ui@8.0.0-beta.1":
   version "8.0.0-beta.1"
-  resolved "https://npm.pkg.github.com/download/@grafana/ui/8.0.0-beta.1/0913f29f5de75d428882e7396484f860eb38d00b643827a5da61ecddfc985f7e#f066535610a14e1983a9c03eb58b093f8ad632e4"
+  resolved "https://registry.yarnpkg.com/@grafana/ui/-/ui-8.0.0-beta.1.tgz#f066535610a14e1983a9c03eb58b093f8ad632e4"
   integrity sha512-Zv2IITIwvmIM4w3yGmC70GfHqKWfr8q8JbkYWlAAbvuw/I7KuspMrlFtV/ux4YTgH2UzhG+kli7VnrRW4MWZNg==
   dependencies:
     "@emotion/css" "11.1.3"

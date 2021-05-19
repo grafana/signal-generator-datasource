@@ -43,7 +43,7 @@ func NewDatasource(s backend.DataSourceInstanceSettings) (instancemgmt.Instance,
 	return &Datasource{
 		settings:      settings,
 		streams:       make(map[string]*SignalStreamer),
-		channelPrefix: fmt.Sprintf("ds/%d/", s.ID),
+		channelPrefix: fmt.Sprintf("ds/%s/", s.UID),
 		closeCh:       make(chan struct{}),
 	}, nil
 }

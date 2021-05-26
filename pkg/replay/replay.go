@@ -63,9 +63,9 @@ func ReplayInfluxLog(fpath string, interval time.Duration, player Replayer) int 
 
 		delta := timestamp - lastTime
 		if delta > 0 && len(batch) > 0 {
-			shitedTime := (timestamp + offsetTime) * timestampScale
+			shiftedTime := (timestamp + offsetTime) * timestampScale
 
-			delta := shitedTime - time.Now().UnixNano()
+			delta := shiftedTime - time.Now().UnixNano()
 			if delta > 0 {
 				sleepTime := time.Nanosecond * time.Duration(delta)
 				if sleepTime < interval {

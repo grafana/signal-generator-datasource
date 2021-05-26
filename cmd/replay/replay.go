@@ -47,7 +47,9 @@ func main() {
 	for {
 		count := replay.ReplayInfluxLog(fpath, interval, ws.Write)
 		fmt.Printf("wrote: %d lines.\n", count)
-		if loop == "" {
+		if loop == "loop" {
+			continue
+		} else {
 			break
 		}
 	}

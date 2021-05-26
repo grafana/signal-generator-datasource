@@ -8,7 +8,10 @@ import (
 	"github.com/grafana/signal-generator-datasource/pkg/replay"
 )
 
-// go run cmd/replay/replay.go /home/ryan/Downloads/influx-sample-data.log "ws://localhost:3000/api/live/push/telegraf?gf_live_frame_format=labels_column" "eyJrIjoicExKYjlEN29yQmlrMEg4YmtodlRFSjN6R0FOUjRLMEQiLCJuIjoicHVibGlzaCIsImlkIjoxfQ=="
+// go run cmd/replay/replay.go /home/ryan/Downloads/influx-sample-data.log "ws://localhost:3000/api/live/push/telegraf" "eyJrIjoicExKYjlEN29yQmlrMEg4YmtodlRFSjN6R0FOUjRLMEQiLCJuIjoicHVibGlzaCIsImlkIjoxfQ=="
+
+// to loop forever:
+// go run cmd/replay/replay.go /home/ryan/Downloads/influx-sample-data.log "ws://localhost:3000/api/live/push/telegraf" "eyJrIjoicExKYjlEN29yQmlrMEg4YmtodlRFSjN6R0FOUjRLMEQiLCJuIjoicHVibGlzaCIsImlkIjoxfQ==" loop
 
 func main() {
 	if len(os.Args) < 3 {
@@ -19,6 +22,10 @@ func main() {
 
 	fpath := os.Args[1]
 	url := os.Args[2]
+	loop := ""
+	if len(os.Args) > 4 {
+		loop = os.Args[4]
+	}
 
 	// fpath := "/home/ryan/Downloads/influx-sample-data.log"
 	// url := "ws://localhost:3000/api/live/push/telegraf?gf_live_frame_format=labels_column"
@@ -37,6 +44,13 @@ func main() {
 	}
 
 	interval := 50 * time.Millisecond
-	count := replay.ReplayInfluxLog(fpath, interval, ws.Write)
-	fmt.Printf("wrote: %d lines.\n", count)
+	for {
+		count := replay.ReplayInfluxLog(fpath, interval, ws.Write)
+		fmt.Printf("wrote: %d lines.\n", count)
+		if loop == "loop" {
+			continue
+		} else {
+			break
+		}
+	}
 }

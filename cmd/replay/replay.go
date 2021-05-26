@@ -11,7 +11,7 @@ import (
 // go run cmd/replay/replay.go /home/ryan/Downloads/influx-sample-data.log "ws://localhost:3000/api/live/push/telegraf?gf_live_frame_format=labels_column" "eyJrIjoicExKYjlEN29yQmlrMEg4YmtodlRFSjN6R0FOUjRLMEQiLCJuIjoicHVibGlzaCIsImlkIjoxfQ=="
 
 // to loop forever:
-// go run cmd/replay/replay.go /home/ryan/Downloads/influx-sample-data.log "ws://localhost:3000/api/live/push/telegraf?gf_live_frame_format=labels_column" "eyJrIjoicExKYjlEN29yQmlrMEg4YmtodlRFSjN6R0FOUjRLMEQiLCJuIjoicHVibGlzaCIsImlkIjoxfQ==" loop
+// go run cmd/replay/replay.go /home/ryan/Downloads/influx-sample-data.log "ws://localhost:3000/api/live/push/telegraf" "eyJrIjoicExKYjlEN29yQmlrMEg4YmtodlRFSjN6R0FOUjRLMEQiLCJuIjoicHVibGlzaCIsImlkIjoxfQ==" loop
 
 func main() {
 	if len(os.Args) < 3 {

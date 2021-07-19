@@ -10,7 +10,7 @@ import (
 )
 
 func TestLocalFile(t *testing.T) {
-	fpath := "../testdata/influx.log"
+	fpath := "../testdata/motor.log"
 	count := 0
 	player := func(msg []byte) error {
 		lines := strings.Split(strings.TrimSpace(string(msg)), "\n")

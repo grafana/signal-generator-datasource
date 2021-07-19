@@ -38,6 +38,7 @@ func main() {
 	var keepFields arrayFlags
 	var sortFields bool
 	var nanToZero bool
+	var dropNan bool
 
 	printUsage := func() {
 		_, _ = fmt.Fprintf(flag.CommandLine.Output(), "transform [flags] file\n")
@@ -52,6 +53,7 @@ func main() {
 	flag.Var(&keepFields, "keep-field", "Keep field")
 	flag.BoolVar(&sortFields, "sort-fields", false, "Sort fields")
 	flag.BoolVar(&nanToZero, "nan-to-zero", false, "Replace NaN with 0")
+	flag.BoolVar(&dropNan, "drop-nan", false, "Drop NaN fields")
 	flag.Parse()
 
 	if flag.NArg() == 0 {
@@ -72,12 +74,6 @@ func main() {
 	for scanner.Scan() {
 		fields := strings.Split(scanner.Text(), " ")
 		fieldSet := strings.Split(fields[1], ",")
-
-		if sortFields {
-			sort.Slice(fieldSet, func(i, j int) bool {
-				return fieldSet[i] < fieldSet[j]
-			})
-		}
 
 		if len(dropFields) > 0 {
 			var newFieldSet []string
@@ -102,18 +98,28 @@ func main() {
 			fieldSet = newFieldSet
 		}
 
-		if nanToZero {
+		if nanToZero || dropNan {
 			var newFieldSet []string
 			for _, field := range fieldSet {
 				fieldName := strings.Split(field, "=")[0]
 				fieldValue := strings.Split(field, "=")[1]
 				if fieldValue == `"NaN"` {
-					newFieldSet = append(newFieldSet, fmt.Sprintf("%s=%d", fieldName, 0))
+					if nanToZero {
+						newFieldSet = append(newFieldSet, fmt.Sprintf("%s=%d", fieldName, 0))
+					} else {
+						continue
+					}
 				} else {
 					newFieldSet = append(newFieldSet, field)
 				}
 			}
 			fieldSet = newFieldSet
+		}
+
+		if sortFields {
+			sort.Slice(fieldSet, func(i, j int) bool {
+				return fieldSet[i] < fieldSet[j]
+			})
 		}
 
 		fields[1] = strings.Join(fieldSet, ",")
